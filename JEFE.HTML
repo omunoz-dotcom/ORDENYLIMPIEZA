@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f4e3d">
+<title>Panel de Limpieza</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--v:#1f6f4a;--v2:#e6f4ec;--r:#c62828;--r2:#fdecea;--a:#a55f00;--a2:#fff3df;--az:#1565c0;--az2:#e8f0fb;--g:#5f6b66;--g2:#eef1ef;--b:#dde4e0;--t:#13221b;--bg:#f3f6f4}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:15px}
+header{background:#1f4e3d;color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+header h1 button{background:none;border:1px solid #ffffff55;color:#fff;border-radius:8px;padding:5px 10px;font-size:13px}
+nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+nav button{flex:none;background:none;border:0;color:#ffffffbb;padding:10px 12px;font-size:14px;font-weight:600;border-bottom:3px solid transparent}
+nav button.on{color:#fff;border-bottom-color:#7fd3a4}
+main{padding:16px;max-width:900px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--b);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:18px;margin:0 0 8px}h3{font-size:16px;margin:0}p{margin:5px 0;line-height:1.4}
+.muted{color:var(--g);font-size:13px}.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chip{font-size:12px;font-weight:700;padding:4px 9px;border-radius:20px;white-space:nowrap}
+.ok{background:var(--v2);color:var(--v)}.warn{background:var(--a2);color:var(--a)}.bad{background:var(--r2);color:var(--r)}.info{background:var(--az2);color:var(--az)}.gray{background:var(--g2);color:var(--g)}
+.hero{display:flex;gap:16px;align-items:center}
+.pct{width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.fotos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.fotos a{position:relative;display:block;border-radius:10px;overflow:hidden;background:var(--g2);aspect-ratio:4/3}
+.fotos img{width:100%;height:100%;object-fit:cover;display:block}
+.fotos span{position:absolute;left:0;right:0;bottom:0;background:#000a;color:#fff;font-size:12px;font-weight:700;padding:4px 6px}
+.nofoto{display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--g2);color:var(--g);font-size:13px;aspect-ratio:4/3}
+.alerta{color:var(--r);font-weight:700;font-size:13px}
+.acc{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.acc button,.btn{border:1px solid var(--v);background:#fff;color:var(--v);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700}
+.btn.p{background:var(--v);color:#fff;padding:12px 16px;font-size:15px}
+.acc button.r{border-color:var(--r);color:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px 6px;border-bottom:1px solid var(--g2);text-align:left}th{color:var(--g);font-weight:600}td.n,th.n{text-align:center}
+.bar{height:10px;border-radius:5px;background:var(--g2);overflow:hidden;min-width:80px}.bar i{display:block;height:100%}
+input{width:100%;font-size:18px;padding:12px;border:1px solid #c9d3ce;border-radius:10px;margin:8px 0}
+.scroll{overflow-x:auto}
+#print{display:none}
+@media print{
+  body{background:#fff}header,main{display:none!important}#print{display:block}
+  .qrc{width:48%;display:inline-block;vertical-align:top;border:2px solid #1f4e3d;border-radius:14px;padding:16px;margin:0 1% 14px;text-align:center;page-break-inside:avoid;font-family:Arial,sans-serif}
+  .qrc .t{background:#1f4e3d;color:#fff;font-weight:800;font-size:13px;letter-spacing:1px;padding:6px;border-radius:8px}
+  .qrc .zn{font-size:24px;font-weight:800;margin:10px 0}
+  .qrc .q{display:flex;justify-content:center;margin:8px 0}
+  .qrc ol{text-align:left;font-size:13px;margin:8px 0 0 18px;padding:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><span>🧹 Limpieza · Bodega de Silos</span><button onclick="cargar()">↻</button></h1>
+  <nav id="nav"></nav>
+</header>
+<main id="app"></main>
+<div id="print"></div>
+
+<script>
+/* ====== CONFIGURACIÓN ====== */
+const API_URL = 'PEGAR_AQUI_LA_URL_DE_LA_APP_WEB_DE_APPS_SCRIPT';   // termina en /exec
+
+let D = null, clave = null, tab = 'turno', off = 0;
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ESTADOS = {
+  PENDIENTE:['⏳ Pendiente','gray'], EN_PROCESO:['🧹 En limpieza','info'], ANALIZANDO:['🔎 Analizando','info'],
+  OBSERVADO:['⚠️ Observado','warn'], REHACER:['❌ Rehacer','bad'], REVISION_JEFE:['👁 Revisar','info'],
+  APROBADO:['✅ Aprobado','ok'], ANULADO:['❌ Anulado','bad']
+};
+const est = e => ESTADOS[e] || [e, 'gray'];
+const TABS = [['turno','Turno actual'],['evid','Evidencias'],['cierres','Cierres'],['oper','Operadores'],['zonas','Zonas y QR']];
+function ls(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+function fh(ms, f){ if(!ms) return '—'; return new Date(ms).toLocaleString('es-EC', Object.assign({timeZone:'America/Guayaquil',hour:'2-digit',minute:'2-digit',hour12:false}, f ? {day:'2-digit',month:'2-digit'} : {})); }
+const colPct = p => p >= 90 ? 'var(--v)' : p >= 60 ? 'var(--a)' : 'var(--r)';
+const bgPct = p => p >= 90 ? 'var(--v2)' : p >= 60 ? 'var(--a2)' : 'var(--r2)';
+const turnoTxt = t => (t === 'DIA' ? '☀️ Día' : '🌙 Noche');
+
+async function api(body){
+  const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body)});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || 'Error del servidor');
+  return j;
+}
+
+function loginJefe(){
+  $('#nav').innerHTML = '';
+  $('#app').innerHTML = `<div class="card" style="max-width:380px;margin:40px auto"><h2>Panel del jefe</h2><p class="muted">Ingrese la clave definida en CONFIG → CLAVE_JEFE.</p>
+    <input id="cl" type="password" inputmode="numeric"><button class="btn p" style="width:100%" id="bl">Entrar</button></div>`;
+  $('#bl').onclick = () => { clave = $('#cl').value.trim(); ls('lim_jefe', clave); cargar(); };
+}
+
+async function cargar(silencio){
+  if(!clave) return loginJefe();
+  if(!silencio && !D) $('#app').innerHTML = '<div class="card">Cargando…</div>';
+  try{
+    const t0 = Date.now();
+    D = await api({accion:'dashboard', clave});
+    off = D.servidor - Math.round((t0 + Date.now()) / 2);
+    render();
+  }catch(e){
+    if(/clave/i.test(e.message)){ ls('lim_jefe', null); clave = null; return loginJefe(); }
+    $('#app').innerHTML = `<div class="card bad">${esc(e.message)}</div>`;
+  }
+}
+
+function render(){
+  $('#nav').innerHTML = TABS.map(([k, t]) => `<button class="${k === tab ? 'on' : ''}" onclick="tab='${k}';render()">${t}</button>`).join('');
+  const v = {turno:vTurno, evid:vEvid, cierres:vCierres, oper:vOper, zonas:vZonas}[tab];
+  $('#app').innerHTML = v();
+}
+
+/* ====== TURNO ACTUAL ====== */
+function vTurno(){
+  const t = D.turno, a = D.anterior;
+  const ahora = Date.now() + off, falta = t.limite - ahora;
+  const lim = falta > 0 ? `Cierra ${fh(t.limite)} · faltan ${Math.floor(falta / 3600000)} h ${Math.floor(falta % 3600000 / 60000)} min` : `Ventana cerrada a las ${fh(t.limite)}`;
+  return `<div class="card hero">
+      <div class="pct" style="background:${bgPct(t.pct)};color:${colPct(t.pct)}">${t.pct}%</div>
+      <div><h2 style="margin:0">${turnoTxt(t.turno)} · ${esc(t.fecha)}</h2>
+        <p><b>${t.aprobadas}/${t.total}</b> zonas aprobadas</p>
+        <p class="muted">Ruta ${esc(t.ventana)} · ${lim}</p>
+        <p class="muted">Programados: ${esc(t.programados.join(', ') || 'sin programación')}</p></div></div>
+    ${D.fase.listo ? `<div class="card ok"><b>✅ Listo para la Fase ${D.fase.actual + 1}.</b> Promedio ${D.fase.promedio}% en los últimos ${D.fase.evaluados} turnos. ${D.fase.siguientes.length ? 'Active en ZONAS: ' + esc(D.fase.siguientes.join(', ')) : ''}</div>` : ''}
+    <div class="grid">${t.zonas.map(zonaCard).join('')}</div>
+    <div class="card" style="margin-top:12px"><div class="row"><h3>Turno anterior · ${turnoTxt(a.turno)} ${esc(a.fecha)}</h3>
+      <span class="chip" style="background:${bgPct(a.pct)};color:${colPct(a.pct)}">${a.pct}%</span></div>
+      <p class="muted">${esc(a.programados.join(', ') || '—')}</p>
+      <div class="acc">${a.zonas.map(z => { const [tx, c] = est(z.estado); return `<span class="chip ${c}">${esc(z.nombre)}: ${tx}</span>`; }).join('')}</div></div>`;
+}
+
+function zonaCard(z){
+  const r = z.reg, [tx, c] = est(z.estado);
+  if(!r) return `<div class="card"><div class="row"><h3>${esc(z.nombre)}</h3><span class="chip ${c}">${tx}</span></div><p class="muted">Sin registro en este turno.</p></div>`;
+  return `<div class="card"><div class="row"><h3>${esc(z.nombre || r.zona)}</h3><span class="chip ${c}">${tx}</span></div>${regDetalle(r, z.estado)}</div>`;
+}
+
+function regDetalle(r, estado){
+  return `<p class="muted">${esc(r.operador)} · antes ${fh(r.horaAntes)}${r.horaDespues ? ' · después ' + fh(r.horaDespues) : ''}${r.minutos ? ' · ' + r.minutos + ' min' : ''} · intento ${r.intentos || 0}</p>
+    <div class="fotos">
+      <a href="${esc(r.antesVer)}" target="_blank" rel="noopener"><img src="${esc(r.antes)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>ANTES${r.sa !== '' ? ' · ' + r.sa + '/5' : ''}</span></a>
+      ${r.despues ? `<a href="${esc(r.despuesVer)}" target="_blank" rel="noopener"><img src="${esc(r.despues)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>DESPUÉS${r.sd !== '' ? ' · ' + r.sd + '/5' : ''}</span></a>` : '<div class="nofoto">Sin foto DESPUÉS</div>'}
+    </div>
+    ${r.alertas ? `<p class="alerta">🚩 ${esc(r.alertas)}</p>` : ''}
+    ${r.motivo ? `<p>${esc(r.motivo)}</p>` : ''}
+    ${r.hallazgos.length ? `<p><b>Pendiente:</b> ${esc(r.hallazgos.join(' · '))}</p>` : ''}
+    ${r.enVentana === 'NO' ? '<p class="muted">⏱ Iniciado fuera de la ventana</p>' : ''}${r.programado === 'NO' ? '<p class="muted">👤 Operador no programado en el turno</p>' : ''}
+    <div class="acc">
+      ${['OBSERVADO','REHACER','REVISION_JEFE'].includes(estado) && r.despues ? `<button onclick="revisar('${r.id}','APROBADO')">✔ Aprobar</button>` : ''}
+      ${['APROBADO','OBSERVADO','REVISION_JEFE'].includes(estado) && r.despues ? `<button class="r" onclick="revisar('${r.id}','REHACER')">✖ Rehacer</button>` : ''}
+      ${estado === 'APROBADO' && r.despues ? `<button onclick="patron('${r.id}')">📌 Usar como foto patrón</button>` : ''}
+    </div>`;
+}
+
+async function revisar(id, estado){
+  const nota = prompt(estado === 'APROBADO' ? 'Comentario (opcional):' : '¿Qué debe corregir el operador?');
+  if(nota === null) return;
+  try{ await api({accion:'revisar', clave, id, estado, nota}); cargar(true); }catch(e){ alert(e.message); }
+}
+async function patron(id){
+  if(!confirm('¿Usar esta foto DESPUÉS como foto patrón de la zona? La IA comparará las próximas fotos contra ella.')) return;
+  try{ await api({accion:'patron', clave, id}); alert('Foto patrón actualizada.'); cargar(true); }catch(e){ alert(e.message); }
+}
+
+/* ====== EVIDENCIAS ====== */
+function vEvid(){
+  if(!D.recientes.length) return '<div class="card">Aún no hay registros.</div>';
+  return `<div class="grid">${D.recientes.map(r => { const [tx, c] = est(r.estado);
+    return `<div class="card"><div class="row"><h3>${esc(r.zona)}</h3><span class="chip ${c}">${tx}</span></div>
+      <p class="muted">${turnoTxt(r.turno)} ${esc(r.fecha)}</p>${regDetalle(r, r.estado)}</div>`; }).join('')}</div>`;
+}
+
+/* ====== CIERRES ====== */
+function vCierres(){
+  const f = D.fase, c = D.cierres.slice().reverse();
+  const avg = c.length ? Math.round(c.reduce((s, x) => s + x.pct, 0) / c.length) : 0;
+  return `<div class="card"><h2>Fase ${f.actual} de incorporación</h2>
+      <p>Promedio de cumplimiento: <b style="color:${colPct(f.promedio)}">${f.promedio}%</b> en ${f.evaluados} de ${f.requeridos} turnos requeridos · meta ${f.meta}%</p>
+      <div class="bar" style="margin:8px 0"><i style="width:${Math.min(100, f.evaluados / f.requeridos * 100)}%;background:var(--v)"></i></div>
+      <p class="muted">${f.listo ? '✅ Puede activar la siguiente fase' : 'Al cumplir la meta durante el periodo completo se habilita la siguiente fase'}${f.siguientes.length ? ': ' + esc(f.siguientes.join(', ')) : ''}.</p></div>
+    <div class="card"><div class="row"><h2 style="margin:0">Cierres de turno</h2><span class="muted">Promedio ${avg}%</span></div>
+      ${c.length ? `<div class="scroll"><table><tr><th>Turno</th><th>Cumplimiento</th><th class="n">Zonas</th><th class="n">Prom.</th><th>Operadores</th><th>Pendientes</th></tr>
+      ${c.map(x => `<tr><td>${turnoTxt(x.turno)}<br><span class="muted">${esc(x.fecha)}</span></td>
+        <td><b style="color:${colPct(x.pct)}">${x.pct}%</b><div class="bar"><i style="width:${x.pct}%;background:${colPct(x.pct)}"></i></div></td>
+        <td class="n">${esc(x.ap)}/${esc(x.total)}</td><td class="n">${esc(x.prom)}</td><td>${esc(x.operadores)}</td><td class="muted">${esc(x.pendientes)}</td></tr>`).join('')}
+      </table></div>` : '<p class="muted">El primer cierre se genera al terminar el primer turno completo.</p>'}</div>`;
+}
+
+/* ====== OPERADORES ====== */
+function vOper(){
+  if(!D.ranking.length) return '<div class="card">Aún no hay datos de operadores.</div>';
+  return `<div class="card"><h2>Desempeño · últimos 14 días</h2><div class="scroll"><table>
+    <tr><th>Operador</th><th class="n">Limpiezas</th><th class="n">Aprobadas</th><th class="n">1er intento</th><th class="n">Prom. después</th><th class="n">Turnos incumplidos</th><th class="n">🚩</th></tr>
+    ${D.ranking.map(o => `<tr><td><b>${esc(o.operador)}</b></td><td class="n">${o.registros}</td><td class="n">${o.aprobados}</td>
+      <td class="n" style="color:${colPct(o.pctPrimer)};font-weight:700">${o.pctPrimer}%</td><td class="n">${esc(o.promD)}</td>
+      <td class="n" style="color:${o.incumplidos ? 'var(--r)' : 'inherit'};font-weight:700">${o.incumplidos}</td><td class="n">${o.alertas || ''}</td></tr>`).join('')}
+    </table></div><p class="muted">1er intento = limpiezas aprobadas sin correcciones. 🚩 = fotos con alertas de autenticidad.</p></div>`;
+}
+
+/* ====== ZONAS Y QR ====== */
+function vZonas(){
+  return `<div class="card"><div class="row"><h2 style="margin:0">Zonas</h2><button class="btn p" onclick="imprimirQR()">🖨 Imprimir QR activos</button></div>
+      ${D.urlApp ? '' : '<p class="alerta">Configure URL_APP en la hoja CONFIG para generar los QR.</p>'}
+      <p class="muted">Para incorporar una zona: hoja ZONAS → ponga el nombre, criterios separados por | y ACTIVA = SI. Luego imprima su QR. Si un QR se filtra, cambie el TOKEN de la zona y reimprímalo.</p></div>
+    <div class="grid">${D.zonas.map(z => `<div class="card"><div class="row"><h3>${esc(z.id)} · ${esc(z.nombre)}</h3>
+        <span class="chip ${z.activa ? 'ok' : 'gray'}">${z.activa ? 'Activa' : 'Fase ' + esc(z.fase)}</span></div>
+        <p class="muted">${esc(z.instruccion || '')} · mínimo ${esc(z.tiempoMin)} min</p>
+        <ul style="margin:6px 0;padding-left:18px;font-size:13px">${z.criterios.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+        ${z.refUrl ? `<img src="${esc(z.refUrl)}" referrerpolicy="no-referrer" style="width:100%;border-radius:10px" alt="">` : '<p class="muted">📌 Sin foto patrón: elija una limpieza aprobada y márquela como patrón.</p>'}
+      </div>`).join('')}</div>`;
+}
+
+function imprimirQR(){
+  const zs = D.zonas.filter(z => z.activa && z.qr);
+  if(!zs.length) return alert('No hay zonas activas con URL_APP configurada.');
+  const p = $('#print');
+  p.innerHTML = zs.map((z, i) => `<div class="qrc"><div class="t">CONTROL DE LIMPIEZA · BODEGA DE SILOS</div>
+      <div class="zn">${esc(z.nombre)}</div><div class="q" id="q${i}"></div>
+      <ol><li>Escanee este código con la cámara del celular.</li><li>Tome la foto <b>ANTES</b>.</li><li>Limpie la zona completa.</li><li>Tome la foto <b>DESPUÉS</b> desde el mismo punto.</li></ol>
+      <p style="font-size:11px;color:#666;margin-top:8px">${esc(z.id)} · Responsable: operador de turno</p></div>`).join('');
+  zs.forEach((z, i) => new QRCode(document.getElementById('q' + i), {text:z.qr, width:230, height:230, correctLevel:QRCode.CorrectLevel.M}));
+  setTimeout(() => window.print(), 700);
+}
+
+/* ====== INICIO ====== */
+clave = ls('lim_jefe');
+cargar();
+setInterval(() => { if(clave && D && tab === 'turno' && !document.hidden) cargar(true); }, 60000);
+</script>
+</body>
+</html>
