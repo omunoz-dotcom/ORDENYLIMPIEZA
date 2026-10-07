@@ -16,6 +16,7 @@ header h1 button{background:none;border:1px solid #ffffff55;color:#fff;border-ra
 nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
 nav button{flex:none;background:none;border:0;color:#ffffffbb;padding:10px 12px;font-size:14px;font-weight:600;border-bottom:3px solid transparent}
 nav button.on{color:#fff;border-bottom-color:#7fd3a4}
+.vivo{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e9e62;vertical-align:middle;animation:pulso 2s infinite}@keyframes pulso{50%{opacity:.35}}
 main{padding:16px;max-width:900px;margin:0 auto}
 .card{background:#fff;border:1px solid var(--b);border-radius:14px;padding:14px;margin-bottom:12px}
 h2{font-size:18px;margin:0 0 8px}h3{font-size:16px;margin:0}p{margin:5px 0;line-height:1.4}
@@ -40,6 +41,30 @@ table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px 6px;b
 input{width:100%;font-size:18px;padding:12px;border:1px solid #c9d3ce;border-radius:10px;margin:8px 0}
 .scroll{overflow-x:auto}
 #print{display:none}
+.capa{position:fixed;inset:0;background:rgba(10,20,15,.55);z-index:40;display:none}.capa.on{display:block}
+.eval{position:fixed;z-index:50;left:0;right:0;bottom:0;top:0;background:var(--bg);overflow:auto;display:none}
+.eval.on{display:block}
+@media(min-width:900px){.eval{top:4vh;bottom:4vh;left:50%;right:auto;width:880px;transform:translateX(-50%);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.3)}}
+.eval .top{position:sticky;top:0;background:#1f4e3d;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:2}
+.eval .top button{background:none;border:1px solid #ffffff66;color:#fff;border-radius:8px;padding:6px 12px;font-size:14px}
+.eval .cuerpo{padding:16px}
+.comp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.comp figure{margin:0;position:relative;border-radius:12px;overflow:hidden;background:var(--g2);aspect-ratio:3/4}
+.comp img{width:100%;height:100%;object-fit:cover;display:block}
+.comp figcaption{position:absolute;left:0;right:0;top:0;background:#000a;color:#fff;font-size:12px;font-weight:800;padding:6px 8px;letter-spacing:.4px}
+.comp .vacio{display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--g);font-size:13px;height:100%}
+.crit{border-bottom:1px solid var(--g2);padding:12px 0}
+.crit p{margin:0 0 8px;font-weight:600}
+.notas{display:flex;gap:6px}
+.notas button{flex:1;min-height:46px;border-radius:10px;border:1.5px solid var(--b);background:#fff;font-size:17px;font-weight:800;color:var(--t)}
+.notas button.on1,.notas button.on2{background:var(--r);border-color:var(--r);color:#fff}
+.notas button.on3{background:var(--a);border-color:var(--a);color:#fff}
+.notas button.on4,.notas button.on5{background:var(--v);border-color:var(--v);color:#fff}
+.escala{display:flex;justify-content:space-between;font-size:11px;color:var(--g);margin-top:4px}
+.resul{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--b);padding:12px 16px;display:flex;gap:10px;align-items:center}
+.resul .r1{flex:1}
+textarea{width:100%;font:15px system-ui;padding:10px;border:1px solid var(--b);border-radius:10px;min-height:64px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#13221b;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;display:none;max-width:90vw}
 @media print{
   body{background:#fff}header,main{display:none!important}#print{display:block}
   .qrc{width:48%;display:inline-block;vertical-align:top;border:2px solid #1f4e3d;border-radius:14px;padding:16px;margin:0 1% 14px;text-align:center;page-break-inside:avoid;font-family:Arial,sans-serif}
@@ -57,73 +82,90 @@ input{width:100%;font-size:18px;padding:12px;border:1px solid #c9d3ce;border-rad
 </header>
 <main id="app"></main>
 <div id="print"></div>
+<div class="capa" id="capa"></div><div class="eval" id="eval" role="dialog" aria-modal="true"></div><div class="toast" id="toast"></div>
 
+<script src="comun.js"></script>
 <script>
-/* ====== CONFIGURACIÓN ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwIjEMw2BewBu-_MJwpX7IQNTv364EasGF84sy741ez7Jg75QoJ3-Uicbxu0VSGLNAg/exec';   // termina en /exec
-
-let D = null, clave = null, tab = 'turno', off = 0;
-const $ = s => document.querySelector(s);
-const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ESTADOS = {
-  PENDIENTE:['⏳ Pendiente','gray'], EN_PROCESO:['🧹 En limpieza','info'], ANALIZANDO:['🔎 Analizando','info'],
-  OBSERVADO:['⚠️ Observado','warn'], REHACER:['❌ Rehacer','bad'], REVISION_JEFE:['👁 Revisar','info'],
-  APROBADO:['✅ Aprobado','ok'], ANULADO:['❌ Anulado','bad']
-};
-const est = e => ESTADOS[e] || [e, 'gray'];
-const TABS = [['turno','Turno actual'],['evid','Evidencias'],['cierres','Cierres'],['oper','Operadores'],['zonas','Zonas y QR']];
-function ls(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
-function fh(ms, f){ if(!ms) return '—'; return new Date(ms).toLocaleString('es-EC', Object.assign({timeZone:'America/Guayaquil',hour:'2-digit',minute:'2-digit',hour12:false}, f ? {day:'2-digit',month:'2-digit'} : {})); }
+/* Los datos vienen de la hoja (vía Apps Script) y se refrescan cada 30 s.
+ * La evaluación se hace comparando la foto DESPUÉS con la foto patrón de la zona. */
+let D = null, clave = null, tab = 'turno', F = {M:null, regs:null, R:null}, sub = null, EV = null;
+ESTADOS.OBSERVADO = ['⚠️ Observado','warn']; ESTADOS.REVISION_JEFE = ['👁 Revisar','info'];
+const TABS = [['evaluar','Por evaluar'],['turno','Turno actual'],['evid','Evidencias'],['cierres','Cierres'],['oper','Operadores'],['zonas','Zonas y patrones']];
+function toast(t, ms){ const x = $('#toast'); x.textContent = t; x.style.display = 'block'; clearTimeout(x._t); x._t = setTimeout(() => x.style.display = 'none', ms || 3000); }
 const colPct = p => p >= 90 ? 'var(--v)' : p >= 60 ? 'var(--a)' : 'var(--r)';
 const bgPct = p => p >= 90 ? 'var(--v2)' : p >= 60 ? 'var(--a2)' : 'var(--r2)';
 const turnoTxt = t => (t === 'DIA' ? '☀️ Día' : '🌙 Noche');
+const fhj = (ms, f) => fh(ms, f ? 'corta' : false);
 
-async function api(body){
-  const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body)});
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error || 'Error del servidor');
-  return j;
-}
-
-function loginJefe(){
+function loginJefe(msg){
   $('#nav').innerHTML = '';
   $('#app').innerHTML = `<div class="card" style="max-width:380px;margin:40px auto"><h2>Panel del jefe</h2><p class="muted">Ingrese la clave definida en CONFIG → CLAVE_JEFE.</p>
+    ${msg ? `<p class="alerta">${esc(msg)}</p>` : ''}
     <input id="cl" type="password" inputmode="numeric"><button class="btn p" style="width:100%" id="bl">Entrar</button></div>`;
-  $('#bl').onclick = () => { clave = $('#cl').value.trim(); ls('lim_jefe', clave); cargar(); };
+  $('#bl').onclick = async () => {
+    const c = $('#cl').value.trim(); if(!c) return;
+    $('#bl').disabled = true; $('#bl').textContent = 'Verificando…';
+    try{ await api({accion:'login_jefe', clave:c}); clave = c; ls('lim_jefe', c); conectar(); }
+    catch(e){ loginJefe(e.message); }
+  };
 }
 
-async function cargar(silencio){
+function conectar(){
   if(!clave) return loginJefe();
-  if(!silencio && !D) $('#app').innerHTML = '<div class="card">Cargando…</div>';
-  try{
-    const t0 = Date.now();
-    D = await api({accion:'dashboard', clave});
-    off = D.servidor - Math.round((t0 + Date.now()) / 2);
-    render();
-  }catch(e){
-    if(/clave/i.test(e.message)){ ls('lim_jefe', null); clave = null; return loginJefe(); }
-    $('#app').innerHTML = `<div class="card bad">${esc(e.message)}</div>`;
-  }
+  if(sub) return sub.ahora();
+  $('#app').innerHTML = '<div class="card">Cargando…</div>';
+  sincronizarHora();
+  sub = suscribirDatos({
+    clave, cadaSeg: 30,
+    datos: r => { F.M = r.maestro; F.regs = r.regs; F.R = r.resumen; render(); },
+    error: e => {
+      if(/clave/i.test(e.message)){ sub.detener(); sub = null; ls('lim_jefe', null); clave = null; return loginJefe(e.message); }
+      if(!F.M) $('#app').innerHTML = `<div class="card bad">${esc(e.message)}</div>`; else toast('Sin conexión, reintentando…');
+    }
+  });
+}
+function cargar(){ if(sub) { sub.ahora(); toast('Actualizando…', 1200); } }
+
+// Arma el mismo objeto que antes devolvía el servidor, pero calculado aquí con los datos en vivo
+function construirD(){
+  const M = F.M, regs = F.regs, R = F.R || {cierres:[], ranking:[], fase:{actual:1, promedio:0, evaluados:0, requeridos:28, meta:90, listo:false, siguientes:[]}};
+  const ms = ahora(), cfg = M.config, t = turnoDe(ms), tp = turnoAnterior(t), sem = semanaDe(t.fecha);
+  const cur = estadoTurno(t, M, regs);
+  Object.assign(cur, {programados: nombresProg(t, M), limite: limiteTurno(t, cfg), ventana: ventana(t, cfg).txt});
+  const prev = estadoTurno(tp, M, regs); prev.programados = nombresProg(tp, M);
+  const semanales = estadoSemana(sem, t, M, regs);
+  semanales.semanaTxt = fmtCorta(sem) + ' al ' + fmtCorta(addDays(sem, 6));
+  return {
+    ahora: ms, turno: cur, anterior: prev, semanales, cierres: R.cierres || [], ranking: R.ranking || [], fase: R.fase,
+    recientes: regs.slice().sort((a, b) => (b.horaAntes || 0) - (a.horaAntes || 0)).slice(0, 40),
+    porEvaluar: regs.filter(r => r.estado === 'POR_REVISAR').sort((a, b) => (a.horaDespues || 0) - (b.horaDespues || 0)),
+    urlApp: cfg.urlApp,
+    zonas: M.zonas.map(z => Object.assign({}, z, {refUrl: z.refMini || z.refUrl}))
+  };
 }
 
 function render(){
-  $('#nav').innerHTML = TABS.map(([k, t]) => `<button class="${k === tab ? 'on' : ''}" onclick="tab='${k}';render()">${t}</button>`).join('');
-  const v = {turno:vTurno, evid:vEvid, cierres:vCierres, oper:vOper, zonas:vZonas}[tab];
+  if(!F.M || !F.regs) return;
+  D = construirD();
+  $('#nav').innerHTML = TABS.map(([k, t]) => `<button class="${k === tab ? 'on' : ''}" onclick="tab='${k}';render()">${t}${k === 'evaluar' && D.porEvaluar.length ? ' <b style="background:#e8a33d;color:#13221b;border-radius:10px;padding:1px 7px;font-size:12px">' + D.porEvaluar.length + '</b>' : ''}</button>`).join('');
+  const v = {evaluar:vPorEvaluar, turno:vTurno, evid:vEvid, cierres:vCierres, oper:vOper, zonas:vZonas}[tab];
+  const y = window.scrollY;
   $('#app').innerHTML = v();
+  window.scrollTo(0, y);   // las actualizaciones en vivo no mueven la pantalla
 }
 
 /* ====== TURNO ACTUAL ====== */
 function vTurno(){
   const t = D.turno, a = D.anterior;
-  const ahora = Date.now() + off, falta = t.limite - ahora;
+  const falta = t.limite - D.ahora;
   const lim = falta > 0 ? `Cierra ${fh(t.limite)} · faltan ${Math.floor(falta / 3600000)} h ${Math.floor(falta % 3600000 / 60000)} min` : `Ventana cerrada a las ${fh(t.limite)}`;
   return `<div class="card hero">
       <div class="pct" style="background:${bgPct(t.pct)};color:${colPct(t.pct)}">${t.pct}%</div>
-      <div><h2 style="margin:0">${turnoTxt(t.turno)} · ${esc(t.fecha)}</h2>
-        <p><b>${t.aprobadas}/${t.total}</b> zonas aprobadas</p>
+      <div><h2 style="margin:0">${turnoTxt(t.turno)} · ${esc(t.fecha)} <span class="vivo" title="Se actualiza cada 30 s"></span></h2>
+        <p><b>${t.ejecutadas}/${t.total}</b> zonas limpiadas · <b>${t.aprobadas}</b> aprobadas${t.porRevisar ? ` · <a href="#" onclick="tab='evaluar';render();return false"><b>${t.porRevisar} por evaluar</b></a>` : ''}</p>
         <p class="muted">Ruta ${esc(t.ventana)} · ${lim}</p>
         <p class="muted">Programados: ${esc(t.programados.join(', ') || 'sin programación')}</p></div></div>
-    ${D.fase.listo ? `<div class="card ok"><b>✅ Listo para la Fase ${D.fase.actual + 1}.</b> Promedio ${D.fase.promedio}% en los últimos ${D.fase.evaluados} turnos. ${D.fase.siguientes.length ? 'Active en ZONAS: ' + esc(D.fase.siguientes.join(', ')) : ''}</div>` : ''}
+    ${D.fase && D.fase.listo ? `<div class="card ok"><b>✅ Listo para la Fase ${D.fase.actual + 1}.</b> Promedio ${D.fase.promedio}% en los últimos ${D.fase.evaluados} turnos. ${D.fase.siguientes.length ? 'Active en ZONAS: ' + esc(D.fase.siguientes.join(', ')) : ''}</div>` : ''}
     <div class="grid">${t.zonas.map(zonaCard).join('')}</div>
     ${vSemanales()}
     <div class="card" style="margin-top:12px"><div class="row"><h3>Turno anterior · ${turnoTxt(a.turno)} ${esc(a.fecha)}</h3>
@@ -136,7 +178,7 @@ function vSemanales(){
   const s = D.semanales;
   if(!s || !s.total) return '';
   return `<div class="card" style="margin-top:12px"><div class="row"><h3>🗓 Zonas semanales · ${esc(s.semanaTxt)}</h3>
-      <span class="chip" style="background:${bgPct(s.pct)};color:${colPct(s.pct)}">${s.aprobadas}/${s.total}</span></div>
+      <span class="chip" style="background:${bgPct(s.pct)};color:${colPct(s.pct)}">${s.aprobadas}/${s.total} aprobadas</span></div>
       <p class="muted">Una limpieza aprobada de lunes a domingo. Si falta alguna, se alerta por correo el lunes.</p></div>
     <div class="grid">${s.zonas.map(zonaCard).join('')}</div>`;
 }
@@ -148,31 +190,95 @@ function zonaCard(z){
 }
 
 function regDetalle(r, estado){
-  return `<p class="muted">${esc(r.operador)} · antes ${fh(r.horaAntes)}${r.horaDespues ? ' · después ' + fh(r.horaDespues) : ''}${r.minutos ? ' · ' + r.minutos + ' min' : ''} · intento ${r.intentos || 0}</p>
+  return `<p class="muted">${esc(r.operador)} · antes ${fhj(r.horaAntes, r.fecha !== D.turno.fecha)}${r.horaDespues ? ' · después ' + fh(r.horaDespues) : ''}${r.minutos ? ' · ' + r.minutos + ' min' : ''} · intento ${r.intentos || 0}</p>
     <div class="fotos">
-      <a href="${esc(r.antesVer)}" target="_blank" rel="noopener"><img src="${esc(r.antes)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>ANTES${r.sa !== '' ? ' · ' + r.sa + '/5' : ''}</span></a>
-      ${r.despues ? `<a href="${esc(r.despuesVer)}" target="_blank" rel="noopener"><img src="${esc(r.despues)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>DESPUÉS${r.sd !== '' ? ' · ' + r.sd + '/5' : ''}</span></a>` : '<div class="nofoto">Sin foto DESPUÉS</div>'}
+      <a href="${esc(r.antesVer)}" target="_blank" rel="noopener"><img src="${esc(r.antes)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>ANTES</span></a>
+      ${r.despues ? `<a href="${esc(r.despuesVer)}" target="_blank" rel="noopener"><img src="${esc(r.despues)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>DESPUÉS${r.pct != null ? ' · ' + r.pct + ' %' : ''}</span></a>` : '<div class="nofoto">Sin foto DESPUÉS</div>'}
     </div>
+    ${r.pct != null ? `<p><b>Calidad vs patrón: <span style="color:${colPct(r.pct)}">${r.pct} %</span></b> <span class="muted">· evaluado ${fhj(r.horaEval, true)}</span></p>` : ''}
     ${r.alertas ? `<p class="alerta">🚩 ${esc(r.alertas)}</p>` : ''}
     ${r.motivo ? `<p>${esc(r.motivo)}</p>` : ''}
-    ${r.hallazgos.length ? `<p><b>Pendiente:</b> ${esc(r.hallazgos.join(' · '))}</p>` : ''}
+    ${(r.hallazgos || []).length ? `<p><b>Pendiente:</b> ${esc(r.hallazgos.join(' · '))}</p>` : ''}
     ${r.enVentana === 'NO' ? '<p class="muted">⏱ Iniciado fuera de la ventana</p>' : ''}${r.programado === 'NO' ? '<p class="muted">👤 Operador no programado en el turno</p>' : ''}
     <div class="acc">
-      ${['OBSERVADO','REHACER','REVISION_JEFE'].includes(estado) && r.despues ? `<button onclick="revisar('${r.id}','APROBADO')">✔ Aprobar</button>` : ''}
-      ${['APROBADO','OBSERVADO','REVISION_JEFE'].includes(estado) && r.despues ? `<button class="r" onclick="revisar('${r.id}','REHACER')">✖ Rehacer</button>` : ''}
+      ${r.despues && estado !== 'ANULADO' ? `<button style="${estado === 'POR_REVISAR' ? 'background:var(--v);color:#fff' : ''}" onclick="abrirEval('${r.id}')">📝 ${estado === 'POR_REVISAR' ? 'Evaluar' : 'Reevaluar'}</button>` : ''}
       ${estado === 'APROBADO' && r.despues ? `<button onclick="patron('${r.id}')">📌 Usar como foto patrón</button>` : ''}
     </div>`;
 }
 
-async function revisar(id, estado){
-  const nota = prompt(estado === 'APROBADO' ? 'Comentario (opcional):' : '¿Qué debe corregir el operador?');
-  if(nota === null) return;
-  try{ await api({accion:'revisar', clave, id, estado, nota}); cargar(true); }catch(e){ alert(e.message); }
-}
 async function patron(id){
-  if(!confirm('¿Usar esta foto DESPUÉS como foto patrón de la zona? La IA comparará las próximas fotos contra ella.')) return;
-  try{ await api({accion:'patron', clave, id}); alert('Foto patrón actualizada.'); cargar(true); }catch(e){ alert(e.message); }
+  if(!confirm('¿Usar esta foto DESPUÉS como foto patrón de la zona? Las próximas limpiezas se evaluarán contra ella.')) return;
+  try{ await api({accion:'patron', clave, id}); toast('Foto patrón actualizada ✓'); sub.ahora(); }catch(e){ alert(e.message); }
 }
+
+/* ====== POR EVALUAR ====== */
+function vPorEvaluar(){
+  const l = D.porEvaluar;
+  if(!l.length) return `<div class="card center" style="text-align:center;padding:30px 14px"><h2>✅ Todo evaluado</h2><p class="muted">Cuando un operador envíe su foto DESPUÉS, aparecerá aquí para que la compare con la foto patrón.</p></div>`;
+  return `<p class="muted" style="margin:0 0 10px">${l.length} limpieza(s) esperando su evaluación · las más antiguas primero</p>
+    <div class="grid">${l.map(r => { const z = F.M.zonas.find(x => x.id === r.zonaId) || {};
+      return `<div class="card"><div class="row"><h3>${esc(r.zona)}</h3><span class="chip info">${turnoTxt(r.turno)} ${esc(fmtCorta(r.fecha))}</span></div>
+        <p class="muted">${esc(r.operador)} · enviada ${fhj(r.horaDespues, true)} · intento ${r.intentos || 1}</p>
+        <div class="fotos">
+          ${z.refMini ? `<a><img src="${esc(z.refMini)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>📌 PATRÓN</span></a>` : '<div class="nofoto">Zona sin foto patrón</div>'}
+          <a><img src="${esc(r.despues)}" loading="lazy" referrerpolicy="no-referrer" alt=""><span>DESPUÉS</span></a>
+        </div>
+        <div class="acc"><button style="background:var(--v);color:#fff;border-color:var(--v);flex:1;padding:12px" onclick="abrirEval('${r.id}')">📝 Evaluar</button></div></div>`; }).join('')}</div>`;
+}
+
+/* ====== VENTANA DE EVALUACIÓN ======
+ * Califique cada criterio de 1 a 5 comparando la foto DESPUÉS con la foto patrón. */
+function abrirEval(id){
+  const r = F.regs.find(x => x.id === id); if(!r) return;
+  const z = F.M.zonas.find(x => x.id === r.zonaId) || {criterios: []};
+  const previos = (r.criterios || []).length === z.criterios.length ? r.criterios.map(c => Number(c.despues) || 0) : z.criterios.map(() => 0);
+  EV = {r, z, p: previos, nota: '', usarComoPatron: !z.refUrl};
+  pintarEval();
+  $('#capa').classList.add('on'); $('#eval').classList.add('on'); document.body.style.overflow = 'hidden';
+}
+function cerrarEval(){ EV = null; $('#capa').classList.remove('on'); $('#eval').classList.remove('on'); document.body.style.overflow = ''; }
+function calcularEval(){
+  const cfg = F.M.config, p = EV.p;
+  if(p.some(x => !x)) return null;
+  const min = Math.min(...p), prom = Math.round(p.reduce((a, x) => a + x, 0) / p.length * 10) / 10;
+  return {estado: min >= cfg.umbralAprobado ? 'APROBADO' : min <= cfg.umbralRehacer ? 'REHACER' : 'OBSERVADO', pct: Math.round(prom / 5 * 100)};
+}
+function pintarEval(){
+  const {r, z} = EV, res = calcularEval();
+  const nota = $('#evNota') ? $('#evNota').value : EV.nota;
+  const y = $('#eval').scrollTop;   // al calificar, la pantalla no salta
+  $('#eval').innerHTML = `<div class="top"><b>📝 ${esc(z.nombre || r.zona)} · ${esc(r.operador)}</b><button onclick="cerrarEval()">Cerrar</button></div>
+    <div class="cuerpo">
+      <div class="comp">
+        <figure>${z.refUrl ? `<a href="${esc(z.refVer)}" target="_blank" rel="noopener"><img src="${esc(z.refUrl)}" referrerpolicy="no-referrer" alt=""></a>` : '<div class="vacio">Esta zona aún no tiene foto patrón.<br>Evalúe con los criterios y, si aprueba, use esta foto como patrón.</div>'}<figcaption>📌 PATRÓN (así debe quedar)</figcaption></figure>
+        <figure><a href="${esc(r.despuesVer)}" target="_blank" rel="noopener"><img src="${esc(r.despues)}" referrerpolicy="no-referrer" alt=""></a><figcaption>DESPUÉS · ${fh(r.horaDespues)}</figcaption></figure>
+      </div>
+      <p class="muted" style="margin-top:6px">Toque una foto para verla en tamaño completo. <a href="${esc(r.antesVer)}" target="_blank" rel="noopener">Ver foto ANTES</a> · ${r.minutos || '—'} min de limpieza</p>
+      <h3 style="margin:16px 0 4px">Califique cada criterio frente al patrón</h3>
+      ${z.criterios.map((c, i) => `<div class="crit"><p>${i + 1}. ${esc(c)}</p>
+        <div class="notas">${[1,2,3,4,5].map(n => `<button class="${EV.p[i] === n ? 'on' + n : ''}" onclick="EV.p[${i}]=${n};pintarEval()">${n}</button>`).join('')}</div>
+        <div class="escala"><span>1 Muy sucio</span><span>3 Detalles</span><span>5 Igual al patrón</span></div></div>`).join('')}
+      <label class="muted" style="display:block;margin:14px 0 6px;font-weight:600">Indicación para el operador (opcional)</label>
+      <textarea id="evNota" placeholder="Ej.: quedan granos junto a la columna del fondo">${esc(nota)}</textarea>
+      ${res && res.estado === 'APROBADO' ? `<label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="evPatron" ${EV.usarComoPatron ? 'checked' : ''} onchange="EV.usarComoPatron=this.checked" style="width:20px;height:20px"> Usar esta foto como nueva foto patrón de la zona</label>` : ''}
+    </div>
+    <div class="resul"><div class="r1">${res ? `<span class="chip ${est(res.estado)[1]}" style="font-size:14px">${est(res.estado)[0]}</span> <b style="font-size:18px;margin-left:6px">${res.pct} %</b>` : `<span class="muted">Faltan ${EV.p.filter(x => !x).length} criterio(s) por calificar</span>`}</div>
+      <button class="btn p" id="evGuardar" ${res ? '' : 'disabled'} style="padding:12px 20px">Guardar</button></div>`;
+  $('#eval').scrollTop = y;
+  $('#evNota').oninput = e => EV.nota = e.target.value;
+  $('#evGuardar').onclick = guardarEval;
+}
+async function guardarEval(){
+  const res = calcularEval(); if(!res) return;
+  const b = $('#evGuardar'); b.disabled = true; b.textContent = 'Guardando…';
+  try{
+    const r = await api({accion:'evaluar', clave, id: EV.r.id, puntajes: EV.p, nota: ($('#evNota').value || '').trim(), usarComoPatron: res.estado === 'APROBADO' && EV.usarComoPatron});
+    const i = F.regs.findIndex(x => x.id === r.reg.id); if(i >= 0) F.regs[i] = Object.assign(F.regs[i], r.reg);
+    cerrarEval(); render(); sub.ahora();
+    toast(`${est(r.estado)[0]} · ${r.pct} %${r.estado !== 'APROBADO' ? ' · avise al operador para que corrija' : ''}`, 4500);
+  }catch(e){ alert(e.message); b.disabled = false; b.textContent = 'Guardar'; }
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && EV) cerrarEval(); });
 
 /* ====== EVIDENCIAS ====== */
 function vEvid(){
@@ -184,17 +290,17 @@ function vEvid(){
 
 /* ====== CIERRES ====== */
 function vCierres(){
-  const f = D.fase, c = D.cierres.slice().reverse();
+  const f = D.fase || {actual:1, promedio:0, evaluados:0, requeridos:28, meta:90, listo:false, siguientes:[]}, c = D.cierres.slice().reverse();
   const avg = c.length ? Math.round(c.reduce((s, x) => s + x.pct, 0) / c.length) : 0;
   return `<div class="card"><h2>Fase ${f.actual} de incorporación</h2>
       <p>Promedio de cumplimiento: <b style="color:${colPct(f.promedio)}">${f.promedio}%</b> en ${f.evaluados} de ${f.requeridos} turnos requeridos · meta ${f.meta}%</p>
       <div class="bar" style="margin:8px 0"><i style="width:${Math.min(100, f.evaluados / f.requeridos * 100)}%;background:var(--v)"></i></div>
       <p class="muted">${f.listo ? '✅ Puede activar la siguiente fase' : 'Al cumplir la meta durante el periodo completo se habilita la siguiente fase'}${f.siguientes.length ? ': ' + esc(f.siguientes.join(', ')) : ''}.</p></div>
     <div class="card"><div class="row"><h2 style="margin:0">Cierres de turno</h2><span class="muted">Promedio ${avg}%</span></div>
-      ${c.length ? `<div class="scroll"><table><tr><th>Turno</th><th>Cumplimiento</th><th class="n">Zonas</th><th class="n">Prom.</th><th>Operadores</th><th>Pendientes</th></tr>
+      ${c.length ? `<div class="scroll"><table><tr><th>Turno</th><th>Limpiadas</th><th class="n">Zonas</th><th class="n">Calidad</th><th>Operadores</th><th>Pendientes</th></tr>
       ${c.map(x => `<tr><td>${turnoTxt(x.turno)}<br><span class="muted">${esc(x.fecha)}</span></td>
         <td><b style="color:${colPct(x.pct)}">${x.pct}%</b><div class="bar"><i style="width:${x.pct}%;background:${colPct(x.pct)}"></i></div></td>
-        <td class="n">${esc(x.ap)}/${esc(x.total)}</td><td class="n">${esc(x.prom)}</td><td>${esc(x.operadores)}</td><td class="muted">${esc(x.pendientes)}</td></tr>`).join('')}
+        <td class="n">${esc(x.ap)}/${esc(x.total)}</td><td class="n">${x.prom !== '' && x.prom != null ? Math.round(x.prom / 5 * 100) + ' %' : '—'}</td><td>${esc(x.operadores)}</td><td class="muted">${esc(x.pendientes)}</td></tr>`).join('')}
       </table></div>` : '<p class="muted">El primer cierre se genera al terminar el primer turno completo.</p>'}</div>`;
 }
 
@@ -202,28 +308,53 @@ function vCierres(){
 function vOper(){
   if(!D.ranking.length) return '<div class="card">Aún no hay datos de operadores.</div>';
   return `<div class="card"><h2>Desempeño · últimos 14 días</h2><div class="scroll"><table>
-    <tr><th>Operador</th><th class="n">Limpiezas</th><th class="n">Aprobadas</th><th class="n">1er intento</th><th class="n">Prom. después</th><th class="n">Turnos incumplidos</th><th class="n">🚩</th></tr>
+    <tr><th>Operador</th><th class="n">Limpiezas</th><th class="n">Aprobadas</th><th class="n">1er intento</th><th class="n">Calidad prom.</th><th class="n">Turnos incumplidos</th><th class="n">🚩</th></tr>
     ${D.ranking.map(o => `<tr><td><b>${esc(o.operador)}</b></td><td class="n">${o.registros}</td><td class="n">${o.aprobados}</td>
-      <td class="n" style="color:${colPct(o.pctPrimer)};font-weight:700">${o.pctPrimer}%</td><td class="n">${esc(o.promD)}</td>
+      <td class="n" style="color:${colPct(o.pctPrimer)};font-weight:700">${o.pctPrimer}%</td><td class="n">${o.promD !== '' && o.promD != null ? Math.round(o.promD / 5 * 100) + ' %' : '—'}</td>
       <td class="n" style="color:${o.incumplidos ? 'var(--r)' : 'inherit'};font-weight:700">${o.incumplidos}</td><td class="n">${o.alertas || ''}</td></tr>`).join('')}
-    </table></div><p class="muted">1er intento = limpiezas aprobadas sin correcciones. 🚩 = fotos con alertas de autenticidad.</p></div>`;
+    </table></div><p class="muted">1er intento = aprobadas sin correcciones. Calidad = puntaje promedio de su evaluación frente a la foto patrón.</p></div>`;
 }
 
 /* ====== ZONAS Y QR ====== */
 function vZonas(){
   return `<div class="card"><div class="row"><h2 style="margin:0">Zonas</h2><button class="btn p" onclick="imprimirQR()">🖨 Imprimir QR activos</button></div>
       ${D.urlApp ? '' : '<p class="alerta">Configure URL_APP en la hoja CONFIG para generar los QR.</p>'}
-      <p class="muted">Para incorporar una zona: hoja ZONAS → ponga el nombre, criterios separados por | y ACTIVA = SI. Luego imprima su QR. Si un QR se filtra, cambie el TOKEN de la zona y reimprímalo.</p></div>
+      <p class="muted">Cada zona necesita una <b>foto patrón</b>: la zona perfectamente limpia, tomada desde el mismo punto donde el operador toma sus fotos. Contra ella se califica cada limpieza.</p>
+      <p class="muted">Para incorporar una zona: hoja ZONAS → nombre, criterios separados por | y ACTIVA = SI. Luego suba su patrón e imprima su QR.</p></div>
     <div class="grid">${D.zonas.map(z => `<div class="card"><div class="row"><h3>${esc(z.id)} · ${esc(z.nombre)}</h3>
         <span class="chip ${z.activa ? 'ok' : 'gray'}">${z.activa ? (z.frecuencia === 'SEMANAL' ? 'Activa · Semanal' : 'Activa · Por turno') : 'Fase ' + esc(z.fase)}</span></div>
         <p class="muted">${esc(z.instruccion || '')} · mínimo ${esc(z.tiempoMin)} min</p>
         <ul style="margin:6px 0;padding-left:18px;font-size:13px">${z.criterios.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
-        ${z.refUrl ? `<img src="${esc(z.refUrl)}" referrerpolicy="no-referrer" style="width:100%;border-radius:10px" alt="">` : '<p class="muted">📌 Sin foto patrón: elija una limpieza aprobada y márquela como patrón.</p>'}
+        ${z.refUrl ? `<p class="muted" style="margin-top:8px"><b>📌 Foto patrón</b></p><img src="${esc(z.refUrl)}" referrerpolicy="no-referrer" style="width:100%;border-radius:10px" alt="">` : '<p class="alerta">📌 Sin foto patrón. Suba una foto de la zona perfectamente limpia.</p>'}
+        <div class="acc"><button onclick="subirPatron('${esc(z.id)}')">📷 ${z.refUrl ? 'Cambiar' : 'Subir'} foto patrón</button></div>
       </div>`).join('')}</div>`;
 }
 
-function imprimirQR(){
-  const zs = D.zonas.filter(z => z.activa && z.qr);
+function subirPatron(zonaId){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment');
+  inp.onchange = async () => {
+    if(!inp.files[0]) return;
+    toast('Subiendo foto patrón…', 20000);
+    try{ const foto = await reducirFoto(inp.files[0]); await api({accion:'subirPatron', clave, zonaId, foto}); toast('Foto patrón guardada ✓'); sub.ahora(); }
+    catch(e){ toast(e.message, 5000); }
+  };
+  inp.click();
+}
+function reducirFoto(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.85)); };
+    img.onerror = () => rej(new Error('No se pudo leer la imagen'));
+    img.src = url;
+  });
+}
+
+async function imprimirQR(){
+  let r;
+  try{ r = await api({accion:'qr', clave}); }catch(e){ return alert(e.message); }   // los tokens solo viven en la hoja
+  const zs = r.zonas.filter(z => z.activa && z.qr);
   if(!zs.length) return alert('No hay zonas activas con URL_APP configurada.');
   const p = $('#print');
   p.innerHTML = zs.map((z, i) => `<div class="qrc"><div class="t">CONTROL DE LIMPIEZA · BODEGA DE SILOS</div>
@@ -236,8 +367,9 @@ function imprimirQR(){
 
 /* ====== INICIO ====== */
 clave = ls('lim_jefe');
-cargar();
-setInterval(() => { if(clave && D && tab === 'turno' && !document.hidden) cargar(true); }, 60000);
+tab = 'evaluar';
+if(clave) conectar(); else loginJefe();
+setInterval(() => { if(D && tab === 'turno' && !document.hidden) render(); }, 30000);   // reloj de la ventana y cambio de turno
 </script>
 </body>
 </html>
