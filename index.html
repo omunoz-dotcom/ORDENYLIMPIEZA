@@ -4,291 +4,178 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f6f4a">
-<title>Limpieza por Zonas</title>
+<title>Limpieza</title>
 <style>
-:root{--v:#1f6f4a;--v2:#e6f4ec;--r:#c62828;--r2:#fdecea;--a:#a55f00;--a2:#fff3df;--az:#1565c0;--az2:#e8f0fb;--g:#5f6b66;--g2:#eef1ef;--b:#dde4e0;--t:#13221b;--bg:#f3f6f4}
+:root{--v:#1f6f4a;--v2:#e6f4ec;--r:#c62828;--r2:#fdecea;--g:#5f6b66;--g2:#eef1ef;--b:#dde4e0;--t:#13221b;--bg:#f3f6f4}
 *{box-sizing:border-box}html,body{margin:0}
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:16px}
-header{background:var(--v);color:#fff;padding:14px 16px 12px}
-header .z{font-size:21px;font-weight:800;line-height:1.2}header .s{font-size:13px;opacity:.9;margin-top:3px}
-main{padding:16px;max-width:560px;margin:0 auto}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);font-size:17px}
+header{background:var(--v);color:#fff;padding:14px 16px}
+header b{font-size:20px;display:block}header small{opacity:.9;font-size:14px}
+main{padding:16px;max-width:520px;margin:0 auto}
 .card{background:#fff;border:1px solid var(--b);border-radius:14px;padding:16px;margin-bottom:14px}
-h2{font-size:20px;margin:0 0 8px}h3{font-size:16px;margin:0 0 8px}p{margin:6px 0;line-height:1.45}
-.muted{color:var(--g);font-size:14px}.center{text-align:center}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:58px;padding:14px;border:0;border-radius:12px;font-size:18px;font-weight:700;background:var(--v);color:#fff;margin-top:12px;cursor:pointer}
-.btn.sec{background:#fff;color:var(--v);border:2px solid var(--v)}.btn:disabled{opacity:.4}
-label{font-weight:600;font-size:14px;display:block;margin-top:14px}
-select,input{width:100%;font-size:20px;padding:13px;border:1px solid #c9d3ce;border-radius:10px;margin-top:6px;background:#fff;color:var(--t)}
-.paso{display:flex;gap:10px;align-items:center;margin:8px 0}
-.paso b{width:30px;height:30px;border-radius:50%;background:var(--v2);color:var(--v);display:flex;align-items:center;justify-content:center;flex:none}
-ul.lst{margin:0;padding-left:20px}ul.lst li{margin:4px 0}
-.big{font-size:44px;font-weight:800;text-align:center;margin:6px 0;font-variant-numeric:tabular-nums}
-.ver{border-radius:14px;padding:18px;text-align:center;margin-bottom:14px}.ver .e{font-size:26px;font-weight:800;margin-bottom:4px}
-.ok{background:var(--v2);color:var(--v)}.warn{background:var(--a2);color:var(--a)}.bad{background:var(--r2);color:var(--r)}.info{background:var(--az2);color:var(--az)}.gray{background:var(--g2);color:var(--g)}
-.ruta ul{list-style:none;margin:0;padding:0}.ruta li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--g2)}
-.chip{font-size:13px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
-table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;border-bottom:1px solid var(--g2);text-align:left;vertical-align:top}th{color:var(--g);font-weight:600}.n{text-align:center!important;font-weight:700;width:58px}
-.prev img{width:100%;border-radius:12px;display:block}
-.spin{width:44px;height:44px;border:5px solid var(--v2);border-top-color:var(--v);border-radius:50%;animation:g 1s linear infinite;margin:20px auto}@keyframes g{to{transform:rotate(360deg)}}
-.link{display:block;margin:14px auto 0;background:none;border:0;color:var(--v);font-weight:600;font-size:15px;text-decoration:underline}
-.vivo{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7fd3a4;margin-right:6px;vertical-align:middle}
-#cam{position:fixed;inset:0;background:#000;z-index:50;display:flex;flex-direction:column}
-#cam .vw{position:relative;flex:1;min-height:0;overflow:hidden}
-#cam video{width:100%;height:100%;object-fit:cover;display:block}
-#ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.35;pointer-events:none}#ghost.off{display:none}
-.camtop{position:absolute;top:0;left:0;right:0;padding:14px 16px 28px;background:linear-gradient(#000b,#0000);color:#fff;font-weight:700;font-size:17px}.camtop small{display:block;font-weight:400;font-size:13px;opacity:.9;margin-top:3px}
-.cambar{display:flex;justify-content:space-around;align-items:center;padding:18px 0 calc(18px + env(safe-area-inset-bottom));background:#000}
-.shot{width:78px;height:78px;border-radius:50%;border:5px solid #fff;background:#ffffff33}.shot:active{background:#fff}
-.cb{width:70px;height:48px;border-radius:10px;border:1px solid #ffffff66;background:transparent;color:#fff;font-size:15px}
+label{font-weight:700;font-size:14px;display:block;margin:12px 0 6px}
+select,input{width:100%;font-size:19px;padding:13px;border:1px solid #c9d3ce;border-radius:10px;background:#fff;color:var(--t)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:62px;border:0;border-radius:12px;font-size:19px;font-weight:800;background:var(--v);color:#fff;margin-top:14px;cursor:pointer}
+.btn.sec{background:#fff;color:var(--v);border:2px solid var(--v)}.btn:disabled{opacity:.35}
+.paso{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.paso i{font-style:normal;width:32px;height:32px;border-radius:50%;background:var(--v2);color:var(--v);display:flex;align-items:center;justify-content:center}
+.paso.ok i{background:var(--v);color:#fff}
+.foto{width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-top:12px;display:block}
+.estado{margin-top:10px;font-size:15px;color:var(--g)}
+.ok-txt{color:var(--v);font-weight:700}.mal{color:var(--r);font-weight:700}
+.fin{background:var(--v2);border-color:#b9dcc8;text-align:center}
+.fin h2{color:var(--v);margin:6px 0}
+.muted{color:var(--g);font-size:14px}
+.link{background:none;border:0;color:var(--v);text-decoration:underline;font-size:15px;margin-top:10px;padding:6px 0}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+input[type=file]{display:none}
 </style>
 </head>
 <body>
-<header><div class="z" id="hz">Control de Limpieza</div><div class="s" id="hs">Bodega de Silos</div></header>
+<header><b id="titulo">🧹 Control de Limpieza</b><small id="sub">Foto antes y después</small></header>
 <main id="app"></main>
+<input type="file" id="cam" accept="image/*" capture="environment">
 
-<script src="comun.js"></script>
 <script>
-/* Los datos vienen de la hoja (vía Apps Script) en una sola consulta que se
- * repite cada 20 s mientras la pantalla está abierta. */
-const S = {M:null, regs:null, op:null, vista:'cargando', zonaOk:false};
-let timer = null, stream = null;
+/* ====== ÚNICA CONFIGURACIÓN: pegue aquí la URL /exec de su Apps Script ====== */
+const API_URL = 'PEGAR_AQUI_LA_URL_DE_APPS_SCRIPT';
 
-function pantalla(html, vista){ clearInterval(timer); S.vista = vista || 'otro'; $('#app').innerHTML = html; window.scrollTo(0,0); }
-function cargando(t){ pantalla(`<div class="card center"><div class="spin"></div><p>${esc(t)}</p></div>`, 'ocupado'); }
-function error(msg, volver){
-  pantalla(`<div class="ver bad"><div class="e">⚠️</div><p>${esc(msg)}</p></div>
-    <button class="btn" id="bv">Volver</button>`, 'error');
-  $('#bv').onclick = volver || (() => { S.vista = 'estado'; actualizar(); });
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ls(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+const hoy = () => new Date().toLocaleDateString('en-CA', {timeZone:'America/Guayaquil'});
+const hora = () => new Date().toLocaleTimeString('es-EC', {timeZone:'America/Guayaquil', hour:'2-digit', minute:'2-digit', hour12:false});
+
+// Estado: listas (en caché para abrir al instante), usuario recordado y limpieza en curso
+const zonaQR = new URLSearchParams(location.search).get('z') || '';
+let L = ls('lista') || {zonas: [], operadores: []};
+let U = ls('usuario');            // {nombre, pin}
+let P = ls('pendiente');          // {id, zona, hora, mini, fecha}
+if(P && P.fecha !== hoy() && P.fecha !== new Date(Date.now() - 864e5).toLocaleDateString('en-CA', {timeZone:'America/Guayaquil'})) { P = null; ls('pendiente', null); }
+let zona = zonaQR || (P && P.zona) || ls('ultimaZona') || '';
+let fin = null, ocupado = false;
+
+async function api(body){
+  let r;
+  try{ r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body)}); }
+  catch(e){ throw new Error('Sin conexión. Revise el internet e intente de nuevo.'); }
+  let j; try{ j = await r.json(); }catch(e){ throw new Error('El servidor no respondió bien. Avise al jefe.'); }
+  if(!j.ok) throw new Error(j.error || 'Error');
+  return j;
+}
+// Las listas se actualizan en segundo plano; la pantalla no espera
+fetch(API_URL).then(r => r.json()).then(j => { if(j.ok){ L = {zonas: j.zonas, operadores: j.operadores}; ls('lista', L); if(!ocupado) pintar(); } }).catch(() => {});
+
+/* ====== PANTALLAS ====== */
+function pintar(){
+  $('#sub').textContent = U ? '👤 ' + U.nombre : 'Foto antes y después';
+  if(!U) return pintarLogin();
+  if(fin) return pintarFin();
+  const opZ = L.zonas.map(z => `<option ${z === zona ? 'selected' : ''}>${esc(z)}</option>`).join('');
+  $('#app').innerHTML = `
+    <div class="card">
+      ${zonaQR ? `<label>Zona</label><div style="font-size:22px;font-weight:800">📍 ${esc(zonaQR)}</div>`
+        : `<label>Zona</label><select id="zona" ${P ? 'disabled' : ''}><option value="">— Elija la zona —</option>${opZ}${zona && !L.zonas.includes(zona) ? `<option selected>${esc(zona)}</option>` : ''}</select>`}
+    </div>
+    <div class="card">
+      <div class="paso ${P ? 'ok' : ''}"><i>${P ? '✓' : '1'}</i> Foto ANTES</div>
+      ${P ? `<img class="foto" src="${P.mini}" alt=""><div class="estado ok-txt">✓ Enviada a las ${esc(P.hora)}</div>`
+          : `<button class="btn" id="bAntes">📷 Tomar foto ANTES</button>`}
+    </div>
+    <div class="card">
+      <div class="paso"><i>2</i> Foto DESPUÉS</div>
+      <p class="muted">${P ? 'Cuando termine de limpiar, tome la foto desde el mismo lugar.' : 'Primero tome la foto ANTES.'}</p>
+      <button class="btn" id="bDespues" ${P ? '' : 'disabled'}>📷 Tomar foto DESPUÉS</button>
+    </div>
+    ${P ? `<button class="link" id="bCancelar">Cancelar esta limpieza</button><br>` : ''}
+    <button class="link" id="bSalir">Cambiar usuario</button>`;
+  const sz = $('#zona'); if(sz) sz.onchange = () => { zona = sz.value; ls('ultimaZona', zona); };
+  if($('#bAntes')) $('#bAntes').onclick = () => { if(!zona) return alert('Elija la zona primero.'); tomar('antes'); };
+  $('#bDespues').onclick = () => tomar('despues');
+  if($('#bCancelar')) $('#bCancelar').onclick = () => { if(confirm('¿Cancelar esta limpieza? Deberá tomar de nuevo la foto ANTES.')){ P = null; ls('pendiente', null); pintar(); } };
+  $('#bSalir').onclick = () => { if(P && !confirm('Hay una limpieza sin terminar. ¿Cambiar de usuario igual?')) return; U = null; ls('usuario', null); pintar(); };
 }
 
-/* ====== ARRANQUE ====== */
-async function arrancar(){
-  const p = new URLSearchParams(location.search);
-  S.z = p.get('z'); S.t = p.get('t');
-  if(!S.z || !S.t) return pantalla(`<div class="card center"><h2>Escanee el código QR de la zona</h2><p class="muted">Apunte la cámara del celular al código QR pegado en la zona de limpieza.</p></div>`);
-  pantalla(`<div class="card center"><div class="spin"></div><p>Cargando zona…</p></div>`, 'cargando');
-  sincronizarHora();
-  S.sub = suscribirDatos({
-    cadaSeg: 20,
-    datos: r => { S.M = r.maestro; S.regs = r.regs; actualizar(); },
-    error: e => { if(!S.M) error(e.message, () => location.reload()); }
-  });
-  setInterval(() => { if(S.vista === 'estado') actualizar(); }, 60000);   // cambio de turno / ventana
-}
-
-async function actualizar(){
-  if(!S.M || !S.regs) return;
-  if(!S.zonaOk){
-    const z = S.M.zonas.find(x => x.id === S.z);
-    if(!z || await sha256(S.t) !== z.tokenHash) return error('Código QR no válido. Use el QR oficial de la zona.', () => location.reload());
-    if(!z.activa) return error('Esta zona todavía no está activa en el control.', () => location.reload());
-    S.zonaOk = true;
-  }
-  calcular();
-  if(!['cargando','estado'].includes(S.vista)) return;     // no interrumpir cámara, vista previa, login ni resultados
-  if(!S.op){ const g = ls('lim_op'); if(g && g.turnoKey === S.turnoKey) S.op = g; }
-  if(!S.op) return login();
-  decidir();
-}
-
-function calcular(){
-  const ms = ahora(), cfg = S.M.config;
-  S.zona = S.M.zonas.find(x => x.id === S.z);
-  S.turno = turnoDe(ms);
-  S.turnoKey = S.turno.fecha + '_' + S.turno.turno;
-  const semanal = S.zona.frecuencia === 'SEMANAL';
-  const sem = semanaDe(S.turno.fecha);
-  const e = semanal ? estadoSemana(sem, S.turno, S.M, S.regs) : estadoTurno(S.turno, S.M, S.regs);
-  S.ez = e.zonas.find(x => x.id === S.z) || {estado:'PENDIENTE'};
-  S.ruta = {titulo: semanal ? 'Limpieza semanal (semana del ' + fmtCorta(sem) + ')' : 'Ruta del turno', aprobadas: e.aprobadas, total: e.total, zonas: e.zonas};
-  S.enVentana = semanal || enVentana(ms, S.turno, cfg);
-  S.bloqueo = !semanal && cfg.bloquear;
-  S.ventanaTxt = ventana(S.turno, cfg).txt;
-  const prog = programados(S.turno, S.M.programacion);
-  S.ops = S.M.operadores.map(o => Object.assign({programado: prog.includes(o.id)}, o));
-  $('#hz').textContent = S.zona.nombre;
-  $('#hs').innerHTML = '<span class="vivo"></span>' + esc(semanal ? 'Limpieza semanal · 1 vez por semana (lunes a domingo)'
-    : 'Turno ' + (S.turno.turno === 'DIA' ? 'Día' : 'Noche') + ' · Ruta de ' + S.ventanaTxt);
-}
-
-/* ====== IDENTIFICACIÓN ====== */
-function login(){
-  const prog = S.ops.filter(o => o.programado), otros = S.ops.filter(o => !o.programado);
-  const opt = l => l.map(o => `<option value="${esc(o.id)}">${esc(o.nombre)}</option>`).join('');
-  pantalla(`<div class="card"><h2>Identifíquese</h2><p class="muted">Solo una vez por turno.</p>
-    <label>Operador</label>
-    <select id="op"><option value="">— Seleccione su nombre —</option>
-      ${prog.length ? `<optgroup label="Programados en este turno">${opt(prog)}</optgroup>` : ''}
-      ${otros.length ? `<optgroup label="${prog.length ? 'Otros (reemplazo)' : 'Operadores'}">${opt(otros)}</optgroup>` : ''}
-    </select>
-    <label>PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8">
-    <button class="btn" id="bi">Ingresar</button></div>`, 'login');
-  $('#bi').onclick = async () => {
-    const id = $('#op').value, pin = $('#pin').value.trim();
-    if(!id || !pin) return alert('Seleccione su nombre e ingrese su PIN.');
-    $('#bi').disabled = true; $('#bi').textContent = 'Verificando…';
-    try{
-      const r = await api({accion:'login', op:id, pin});
-      S.op = {id, pin, nombre:r.nombre, turnoKey:S.turnoKey};
-      ls('lim_op', S.op);
-      S.vista = 'estado'; actualizar();
-    }catch(e){ alert(e.message); $('#bi').disabled = false; $('#bi').textContent = 'Ingresar'; }
+function pintarLogin(msg){
+  const op = L.operadores.map(o => `<option>${esc(o)}</option>`).join('');
+  $('#app').innerHTML = `<div class="card"><h2 style="margin:0 0 4px">Ingresar</h2><p class="muted">Solo la primera vez en este celular.</p>
+    <label>Usuario</label>
+    ${L.operadores.length ? `<select id="u"><option value="">— Su nombre —</option>${op}</select>` : `<input id="u" placeholder="Su nombre como está en la hoja">`}
+    <label>PIN</label><input id="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+    ${msg ? `<p class="mal">${esc(msg)}</p>` : ''}
+    <button class="btn" id="bIn">Ingresar</button></div>`;
+  $('#bIn').onclick = async () => {
+    const nombre = $('#u').value.trim(), pin = $('#pin').value.trim();
+    if(!nombre || !pin) return alert('Escriba su usuario y PIN.');
+    $('#bIn').disabled = true; $('#bIn').innerHTML = '<span class="spin"></span> Verificando…';
+    try{ await api({accion:'login', operador:nombre, pin}); U = {nombre, pin}; ls('usuario', U); pintar(); }
+    catch(e){ pintarLogin(e.message); }
   };
 }
-function salir(){ ls('lim_op', null); S.op = null; login(); }
 
-/* ====== FLUJO ====== */
-function decidir(){
-  const ez = S.ez, reg = ez.reg;
-  const pie = rutaHtml() + `<button class="link" onclick="salir()">No soy ${esc(S.op.nombre)} · cambiar operador</button>`;
-  const v = h => pantalla(h, 'estado');
-  if(ez.estado === 'APROBADO')
-    return v(`<div class="ver ok"><div class="e">✅ Zona aprobada${S.zona.frecuencia === 'SEMANAL' ? ' esta semana' : ''}</div><p>Limpiada por ${esc(reg.operador)} · ${fh(reg.horaDespues)}</p></div>${pie}`);
-  if(ez.estado === 'POR_REVISAR')
-    return v(`<div class="ver info"><div class="e">🕒 Limpieza enviada</div><p>${reg.operadorId === S.op.id ? 'Su limpieza' : 'Limpiada por <b>' + esc(reg.operador) + '</b>'} · ${fh(reg.horaDespues)}<br>Pendiente de evaluación del jefe contra la foto patrón.</p></div>${patronHtml('Estándar de la zona')}${pie}`);
-  if(reg && ['EN_PROCESO','ANALIZANDO','OBSERVADO','REHACER','REVISION_JEFE'].includes(ez.estado)){
-    if(reg.operadorId !== S.op.id)
-      return v(`<div class="ver info"><div class="e">🧹 En curso</div><p>Esta limpieza la inició <b>${esc(reg.operador)}</b>. Solo esa persona puede cerrarla.</p></div>${pie}`);
-    if(ez.estado === 'EN_PROCESO') return pasoDespues(reg, pie);
-    if(ez.estado === 'ANALIZANDO' || ez.estado === 'REVISION_JEFE')
-      return v(`<div class="ver info"><div class="e">👁 En revisión</div><p>${ez.estado === 'ANALIZANDO' ? 'Analizando las fotos. Esta pantalla se actualiza sola.' : 'El jefe revisará las fotos de esta limpieza.'}</p></div>${pie}`);
-    return v(resultadoHtml(reg) + patronHtml('Así debe quedar') + `<button class="btn" onclick="tomar('DESPUES')">📷 Corregí · tomar nueva foto DESPUÉS</button>` + pie);
-  }
-  pasoAntes(pie);
-}
-
-function patronHtml(titulo){
-  if(!S.zona.refUrl) return '';
-  return `<div class="card"><h3>📌 ${esc(titulo || 'Así debe quedar')}</h3>
-    <img src="${esc(S.zona.refUrl)}" referrerpolicy="no-referrer" alt="Foto patrón" style="width:100%;border-radius:12px;display:block">
-    <p class="muted">Foto patrón de la zona. Su limpieza se califica comparándola con esta foto.</p></div>`;
-}
-function criteriosHtml(){ return `<h3 style="margin-top:14px">La zona debe quedar con:</h3><ul class="lst">${S.zona.criterios.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`; }
-
-function pasoAntes(pie){
-  const bloq = S.bloqueo && !S.enVentana;
-  pantalla(`<div class="card"><h2>Ruta de limpieza</h2>
-    <div class="paso"><b>1</b>Tome la foto ANTES</div>
-    <div class="paso"><b>2</b>Limpie la zona completa (mínimo ${S.zona.tiempoMin} min)</div>
-    <div class="paso"><b>3</b>Tome la foto DESPUÉS desde el mismo punto</div>
-    ${S.zona.instruccion ? `<p class="muted">📍 ${esc(S.zona.instruccion)}</p>` : ''}
-    ${criteriosHtml()}
-    ${S.zona.refUrl ? `<p class="muted" style="margin-top:12px">📌 Revise abajo la foto patrón: así debe quedar la zona.</p>` : ''}
-    ${bloq ? `<div class="ver warn" style="margin:14px 0 0"><b>Fuera de horario</b><p>La ruta de este turno se registra de ${esc(S.ventanaTxt)}.</p></div>` : ''}
-    <button class="btn" ${bloq ? 'disabled' : ''} onclick="tomar('ANTES')">📷 Tomar foto ANTES</button></div>${patronHtml()}${pie}`, 'estado');
-}
-
-function pasoDespues(reg, pie){
-  const listo = reg.horaAntes + S.zona.tiempoMin * 60000;
-  pantalla(`<div class="ver info"><div class="e">🧹 Limpie la zona</div><p>Foto ANTES registrada a las ${fh(reg.horaAntes, false, true)}</p></div>
-    <div class="card"><p class="center muted" id="lbl">Podrá tomar la foto DESPUÉS en:</p><div class="big" id="cd">--:--</div>
-    ${criteriosHtml()}
-    <button class="btn" id="bd" disabled onclick="tomar('DESPUES')">📷 Tomar foto DESPUÉS</button></div>${patronHtml()}${pie}`, 'estado');
-  const tick = () => {
-    const f = listo - ahora();
-    if(f <= 0){ $('#cd').textContent = '✓'; $('#lbl').textContent = 'Ya puede tomar la foto DESPUÉS'; $('#bd').disabled = false; clearInterval(timer); return; }
-    $('#cd').textContent = Math.floor(f / 60000) + ':' + String(Math.floor(f % 60000 / 1000)).padStart(2, '0');
-  };
-  tick(); timer = setInterval(tick, 1000);
-}
-
-function rutaHtml(){
-  const r = S.ruta; if(!r) return '';
-  return `<div class="card ruta"><h3>${esc(r.titulo)}: ${r.aprobadas}/${r.total} aprobadas</h3><ul>
-    ${r.zonas.map(z => { const [t, c] = est(z.estado); return `<li><span>${esc(z.nombre)}</span><span class="chip ${c}">${t}</span></li>`; }).join('')}
-    </ul>${r.total && r.aprobadas === r.total ? '<p class="center" style="color:var(--v);font-weight:800;margin-top:10px">🎉 Ruta completa</p>' : ''}</div>`;
-}
-
-function resultadoHtml(x){
-  const [t, c] = est(x.estado);
-  const col = d => d >= 4 ? 'var(--v)' : d <= 2 ? 'var(--r)' : 'var(--a)';
-  const conAntes = (x.criterios || []).some(k => k.antes != null && k.antes !== '');
-  const crit = (x.criterios || []).map(k => `<tr><td>${esc(k.criterio)}</td>${conAntes ? `<td class="n">${esc(k.antes)}</td>` : ''}<td class="n" style="color:${col(k.despues)}">${esc(k.despues)}</td></tr>`).join('');
-  return `<div class="ver ${c}"><div class="e">${t}</div><p>${esc(x.motivo || '')}</p>
-      ${x.pct != null ? `<p style="font-size:18px"><b>Calificación: ${esc(x.pct)} %</b> del estándar</p>` : x.sd !== '' && x.sd != null && x.sa !== '' && x.sa != null ? `<p style="font-size:18px"><b>${esc(x.sa)} → ${esc(x.sd)}</b> de 5</p>` : ''}</div>
-    ${(x.hallazgos || []).length ? `<div class="card"><h3>Lo que falta corregir</h3><ul class="lst">${x.hallazgos.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
-    ${crit ? `<div class="card"><h3>Calificación por criterio</h3><table><tr><th>Criterio</th>${conAntes ? '<th class="n">Antes</th>' : ''}<th class="n">${conAntes ? 'Después' : 'Puntaje (1–5)'}</th></tr>${crit}</table></div>` : ''}`;
-}
-
-// Mientras llega la siguiente consulta, usar el registro devuelto por el servidor
-function aplicarReg(reg){
-  if(!reg) return;
-  S.regs = S.regs.filter(r => r.id !== reg.id).concat([reg]);
+function pintarFin(){
+  $('#app').innerHTML = `<div class="card fin"><div style="font-size:48px">✅</div><h2>Limpieza registrada</h2>
+      <p>${esc(fin.zona)}<br>Antes ${esc(fin.antes)} · Después ${esc(fin.despues)}${fin.minutos !== '' ? ' · ' + fin.minutos + ' min' : ''}</p></div>
+    <button class="btn" id="bNueva">Registrar otra zona</button>`;
+  $('#bNueva').onclick = () => { fin = null; if(!zonaQR) zona = ''; pintar(); };
 }
 
 /* ====== FOTOS ====== */
-async function tomar(tipo){
-  const foto = await abrirCamara(tipo);
-  if(!foto){ S.vista = 'estado'; return actualizar(); }
-  pantalla(`<div class="card prev"><h3>Foto ${tipo === 'ANTES' ? 'ANTES' : 'DESPUÉS'}</h3><img src="${foto.b64}" alt="">
-    <button class="btn" id="be">✔ Enviar foto</button><button class="btn sec" id="br">↺ Repetir</button></div>`, 'otro');
-  $('#br').onclick = () => tomar(tipo);
-  $('#be').onclick = async () => {
-    if(ahora() - foto.hora > (S.M.config.minFotoVigencia || 5) * 60000) return error('La foto venció. Tómela de nuevo en el momento.');
-    cargando(tipo === 'ANTES' ? 'Registrando foto ANTES…' : (S.M.config.usarIA ? 'Analizando la limpieza… (puede tardar unos 20 segundos)' : 'Enviando foto DESPUÉS…'));
+function tomar(tipo){
+  const inp = $('#cam'); inp.value = '';
+  inp.onchange = async () => {
+    const file = inp.files[0]; if(!file) return;
+    ocupado = true;
+    const b = $(tipo === 'antes' ? '#bAntes' : '#bDespues');
+    b.disabled = true; b.innerHTML = '<span class="spin"></span> Enviando foto…';
     try{
-      const base = Object.assign({op:S.op.id, pin:S.op.pin, foto:foto.b64}, await ubicacion());
-      if(tipo === 'ANTES'){
-        const r = await api(Object.assign(base, {accion:'antes', z:S.z, t:S.t}));
-        aplicarReg(r.reg); S.vista = 'estado'; S.sub.ahora(); return actualizar();
+      const z = tipo === 'antes' ? (zonaQR || zona) : P.zona;
+      const foto = await preparar(file, tipo === 'antes' ? 'ANTES' : 'DESPUÉS', z);
+      if(tipo === 'antes'){
+        const r = await api({accion:'antes', zona:z, operador:U.nombre, pin:U.pin, foto:foto.grande});
+        P = {id:r.id, zona:z, hora:r.hora, mini:foto.mini, fecha:hoy()}; ls('pendiente', P);
+      }else{
+        const r = await api({accion:'despues', id:P.id, operador:U.nombre, pin:U.pin, foto:foto.grande});
+        fin = {zona:P.zona, antes:P.hora, despues:r.hora, minutos:r.minutos};
+        P = null; ls('pendiente', null);
       }
-      const r = await api(Object.assign(base, {accion:'despues', id:S.ez.reg.id}));
-      aplicarReg(r.reg); S.sub.ahora();
-      pantalla((r.estado === 'POR_REVISAR'
-        ? `<div class="ver ok"><div class="e">✅ Limpieza enviada</div><p>El jefe la evaluará comparándola con la foto patrón.</p></div>${patronHtml('Estándar de la zona')}`
-        : resultadoHtml(r)) + `<button class="btn" id="bc">Continuar</button>`, 'otro');
-      $('#bc').onclick = () => { S.vista = 'estado'; actualizar(); };
     }catch(e){
-      if(/PIN incorrecto|Operador no válido/.test(e.message)){ ls('lim_op', null); S.op = null; }
-      error(e.message);
+      alert(e.message);
+      if(/PIN|Usuario/.test(e.message)){ U = null; ls('usuario', null); }
     }
+    ocupado = false; pintar();
   };
+  inp.click();
 }
 
-async function abrirCamara(tipo){
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ error('Este navegador no permite usar la cámara. Abra el enlace en Google Chrome o Safari.'); return null; }
-  const ov = document.createElement('div'); ov.id = 'cam';
-  ov.innerHTML = `<div class="vw"><video id="vid" autoplay playsinline muted></video>
-      ${S.zona.refUrl ? `<img id="ghost" src="${esc(S.zona.refUrl)}" referrerpolicy="no-referrer" alt="">` : ''}
-      <div class="camtop">FOTO ${tipo === 'ANTES' ? 'ANTES' : 'DESPUÉS'} · ${esc(S.zona.nombre)}<small>${esc(S.zona.instruccion || 'Encuadre la zona completa')}${S.zona.refUrl ? ' · Haga coincidir con la guía' : ''}</small></div></div>
-    <div class="cambar"><button class="cb" id="cx">Cancelar</button><button class="shot" id="cs" aria-label="Tomar foto"></button><button class="cb" id="cg">${S.zona.refUrl ? 'Guía' : ''}</button></div>`;
-  document.body.appendChild(ov);
-  S.vista = 'otro';
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}}, audio:false});
-    $('#vid').srcObject = stream;
-  }catch(e){ cerrarCam(); error('No se pudo abrir la cámara. Permita el acceso a la cámara para esta página y vuelva a intentar.'); return null; }
-  return new Promise(res => {
-    $('#cx').onclick = () => { cerrarCam(); res(null); };
-    const g = $('#ghost'); if(g) $('#cg').onclick = () => g.classList.toggle('off');
-    $('#cs').onclick = () => {
-      const v = $('#vid'); if(!v.videoWidth) return;
-      const data = capturar(v, tipo); cerrarCam(); res(data);
+// Reduce la foto y le pone zona, usuario, fecha y hora
+function preparar(file, tipo, z){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+      const W = Math.round(img.width * k), H = Math.round(img.height * k);
+      const c = document.createElement('canvas'); c.width = W; c.height = H;
+      const x = c.getContext('2d'); x.drawImage(img, 0, 0, W, H);
+      const fs = Math.max(16, Math.round(W / 34)), band = Math.round(fs * 3.3);
+      x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(0, H - band, W, band);
+      x.fillStyle = '#fff'; x.font = `700 ${fs}px sans-serif`;
+      x.fillText(`${tipo} · ${z}`, fs * .6, H - band + fs * 1.3);
+      x.font = `${Math.round(fs * .85)}px sans-serif`;
+      x.fillText(`${new Date().toLocaleDateString('es-EC', {timeZone:'America/Guayaquil'})} ${hora()} · ${U.nombre}`, fs * .6, H - band + fs * 2.7);
+      URL.revokeObjectURL(url);
+      const grande = c.toDataURL('image/jpeg', 0.72);
+      const m = document.createElement('canvas'), km = 480 / W; m.width = 480; m.height = Math.round(H * km);
+      m.getContext('2d').drawImage(c, 0, 0, m.width, m.height);
+      res({grande, mini: m.toDataURL('image/jpeg', 0.6)});
     };
+    img.onerror = () => rej(new Error('No se pudo leer la foto'));
+    img.src = url;
   });
 }
-function cerrarCam(){ if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; } const c = $('#cam'); if(c) c.remove(); }
 
-function capturar(v, tipo){
-  const W = Math.min(1280, v.videoWidth), Hh = Math.round(v.videoHeight * W / v.videoWidth);
-  const c = document.createElement('canvas'); c.width = W; c.height = Hh;
-  const x = c.getContext('2d'); x.drawImage(v, 0, 0, W, Hh);
-  const hora = ahora(), fs = Math.max(16, Math.round(W / 42)), band = Math.round(fs * 3.4);
-  x.fillStyle = 'rgba(0,0,0,.62)'; x.fillRect(0, Hh - band, W, band);
-  x.fillStyle = '#fff'; x.font = `700 ${fs}px sans-serif`;
-  x.fillText(`${tipo === 'ANTES' ? 'ANTES' : 'DESPUÉS'} · ${S.zona.nombre}`, fs * .6, Hh - band + fs * 1.3);
-  x.font = `${Math.round(fs * .85)}px sans-serif`;
-  x.fillText(`${fh(hora, true, true)} · ${S.op.nombre}`, fs * .6, Hh - band + fs * 2.75);
-  return {b64: c.toDataURL('image/jpeg', 0.75), hora};
-}
-
-function ubicacion(){
-  if(!S.M.config.geocerca || !navigator.geolocation) return Promise.resolve({});
-  return new Promise(res => navigator.geolocation.getCurrentPosition(
-    p => res({lat:p.coords.latitude, lng:p.coords.longitude}), () => res({}), {enableHighAccuracy:true, timeout:10000}));
-}
-
-arrancar();
+pintar();
 </script>
 </body>
 </html>
