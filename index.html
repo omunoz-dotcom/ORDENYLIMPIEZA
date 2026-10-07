@@ -31,6 +31,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 .prev img{width:100%;border-radius:12px;display:block}
 .spin{width:44px;height:44px;border:5px solid var(--v2);border-top-color:var(--v);border-radius:50%;animation:g 1s linear infinite;margin:20px auto}@keyframes g{to{transform:rotate(360deg)}}
 .link{display:block;margin:14px auto 0;background:none;border:0;color:var(--v);font-weight:600;font-size:15px;text-decoration:underline}
+.vivo{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7fd3a4;margin-right:6px;vertical-align:middle}
 #cam{position:fixed;inset:0;background:#000;z-index:50;display:flex;flex-direction:column}
 #cam .vw{position:relative;flex:1;min-height:0;overflow:hidden}
 #cam video{width:100%;height:100%;object-fit:cover;display:block}
@@ -45,65 +46,72 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 <header><div class="z" id="hz">Control de Limpieza</div><div class="s" id="hs">Bodega de Silos</div></header>
 <main id="app"></main>
 
+<script src="comun.js"></script>
 <script>
-/* ====== CONFIGURACIÓN ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwIjEMw2BewBu-_MJwpX7IQNTv364EasGF84sy741ez7Jg75QoJ3-Uicbxu0VSGLNAg/exec';   // termina en /exec
-
-/* ====== ESTADO Y UTILIDADES ====== */
-const S = {};
+/* Los datos vienen de la hoja (vía Apps Script) en una sola consulta que se
+ * repite cada 20 s mientras la pantalla está abierta. */
+const S = {M:null, regs:null, op:null, vista:'cargando', zonaOk:false};
 let timer = null, stream = null;
-const $ = s => document.querySelector(s);
-const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const ESTADOS = {
-  PENDIENTE:['⏳ Pendiente','gray'], EN_PROCESO:['🧹 En limpieza','info'], ANALIZANDO:['🔎 Analizando','info'],
-  OBSERVADO:['⚠️ Corregir','warn'], REHACER:['❌ Rehacer','bad'], REVISION_JEFE:['👁 Revisión jefe','info'],
-  APROBADO:['✅ Aprobado','ok'], ANULADO:['❌ Anulado','bad']
-};
-const est = e => ESTADOS[e] || [e, 'gray'];
-function ahoraSrv(){ return new Date(Date.now() + (S.off || 0)); }
-function fh(ms, conFecha){
-  return new Date(ms).toLocaleString('es-EC', Object.assign({timeZone:'America/Guayaquil',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false},
-    conFecha ? {day:'2-digit',month:'2-digit',year:'numeric'} : {}));
-}
-function ls(k, v){
-  try{
-    if(v === undefined) return JSON.parse(localStorage.getItem(k) || 'null');
-    if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v));
-  }catch(e){ return null; }
-}
-async function api(body){
-  const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body)});
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error || 'Error del servidor');
-  return j;
-}
-function pantalla(html){ clearInterval(timer); $('#app').innerHTML = html; window.scrollTo(0,0); }
-function cargando(t){ pantalla(`<div class="card center"><div class="spin"></div><p>${esc(t)}</p></div>`); }
-function error(msg){ pantalla(`<div class="ver bad"><div class="e">⚠️</div><p>${esc(msg)}</p></div><button class="btn" onclick="refrescar()">Volver</button>`); }
 
-/* ====== CARGA DE ZONA ====== */
-async function refrescar(){
+function pantalla(html, vista){ clearInterval(timer); S.vista = vista || 'otro'; $('#app').innerHTML = html; window.scrollTo(0,0); }
+function cargando(t){ pantalla(`<div class="card center"><div class="spin"></div><p>${esc(t)}</p></div>`, 'ocupado'); }
+function error(msg, volver){
+  pantalla(`<div class="ver bad"><div class="e">⚠️</div><p>${esc(msg)}</p></div>
+    <button class="btn" id="bv">Volver</button>`, 'error');
+  $('#bv').onclick = volver || (() => { S.vista = 'estado'; actualizar(); });
+}
+
+/* ====== ARRANQUE ====== */
+async function arrancar(){
   const p = new URLSearchParams(location.search);
   S.z = p.get('z'); S.t = p.get('t');
   if(!S.z || !S.t) return pantalla(`<div class="card center"><h2>Escanee el código QR de la zona</h2><p class="muted">Apunte la cámara del celular al código QR pegado en la zona de limpieza.</p></div>`);
-  cargando('Cargando zona…');
-  try{
-    const t0 = Date.now();
-    const r = await api({accion:'init', z:S.z, t:S.t});
-    S.off = r.servidor - Math.round((t0 + Date.now()) / 2);       // hora oficial = hora del servidor
-    Object.assign(S, {zona:r.zona, turno:r.turno, ops:r.operadores, geo:r.geocerca, ez:r.estadoZona, ruta:r.ruta,
-      ventana:r.ventana, enVentana:r.enVentana, bloqueo:r.bloqueaFueraVentana, vigencia:r.minFotoVigencia});
-    S.turnoKey = r.turno.fecha + '_' + r.turno.turno;
-    $('#hz').textContent = r.zona.nombre;
-    $('#hs').textContent = r.zona.frecuencia === 'SEMANAL'
-      ? 'Limpieza semanal · 1 vez por semana (lunes a domingo)'
-      : 'Turno ' + (r.turno.turno === 'DIA' ? 'Día' : 'Noche') + ' · Ruta de ' + r.ventana;
-    const g = ls('lim_op');
-    if(g && g.turnoKey === S.turnoKey){ S.op = g; return decidir(); }
-    login();
-  }catch(e){ error(e.message); }
+  pantalla(`<div class="card center"><div class="spin"></div><p>Cargando zona…</p></div>`, 'cargando');
+  sincronizarHora();
+  S.sub = suscribirDatos({
+    cadaSeg: 20,
+    datos: r => { S.M = r.maestro; S.regs = r.regs; actualizar(); },
+    error: e => { if(!S.M) error(e.message, () => location.reload()); }
+  });
+  setInterval(() => { if(S.vista === 'estado') actualizar(); }, 60000);   // cambio de turno / ventana
 }
 
+async function actualizar(){
+  if(!S.M || !S.regs) return;
+  if(!S.zonaOk){
+    const z = S.M.zonas.find(x => x.id === S.z);
+    if(!z || await sha256(S.t) !== z.tokenHash) return error('Código QR no válido. Use el QR oficial de la zona.', () => location.reload());
+    if(!z.activa) return error('Esta zona todavía no está activa en el control.', () => location.reload());
+    S.zonaOk = true;
+  }
+  calcular();
+  if(!['cargando','estado'].includes(S.vista)) return;     // no interrumpir cámara, vista previa, login ni resultados
+  if(!S.op){ const g = ls('lim_op'); if(g && g.turnoKey === S.turnoKey) S.op = g; }
+  if(!S.op) return login();
+  decidir();
+}
+
+function calcular(){
+  const ms = ahora(), cfg = S.M.config;
+  S.zona = S.M.zonas.find(x => x.id === S.z);
+  S.turno = turnoDe(ms);
+  S.turnoKey = S.turno.fecha + '_' + S.turno.turno;
+  const semanal = S.zona.frecuencia === 'SEMANAL';
+  const sem = semanaDe(S.turno.fecha);
+  const e = semanal ? estadoSemana(sem, S.turno, S.M, S.regs) : estadoTurno(S.turno, S.M, S.regs);
+  S.ez = e.zonas.find(x => x.id === S.z) || {estado:'PENDIENTE'};
+  S.ruta = {titulo: semanal ? 'Limpieza semanal (semana del ' + fmtCorta(sem) + ')' : 'Ruta del turno', aprobadas: e.aprobadas, total: e.total, zonas: e.zonas};
+  S.enVentana = semanal || enVentana(ms, S.turno, cfg);
+  S.bloqueo = !semanal && cfg.bloquear;
+  S.ventanaTxt = ventana(S.turno, cfg).txt;
+  const prog = programados(S.turno, S.M.programacion);
+  S.ops = S.M.operadores.map(o => Object.assign({programado: prog.includes(o.id)}, o));
+  $('#hz').textContent = S.zona.nombre;
+  $('#hs').innerHTML = '<span class="vivo"></span>' + esc(semanal ? 'Limpieza semanal · 1 vez por semana (lunes a domingo)'
+    : 'Turno ' + (S.turno.turno === 'DIA' ? 'Día' : 'Noche') + ' · Ruta de ' + S.ventanaTxt);
+}
+
+/* ====== IDENTIFICACIÓN ====== */
 function login(){
   const prog = S.ops.filter(o => o.programado), otros = S.ops.filter(o => !o.programado);
   const opt = l => l.map(o => `<option value="${esc(o.id)}">${esc(o.nombre)}</option>`).join('');
@@ -114,39 +122,47 @@ function login(){
       ${otros.length ? `<optgroup label="${prog.length ? 'Otros (reemplazo)' : 'Operadores'}">${opt(otros)}</optgroup>` : ''}
     </select>
     <label>PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8">
-    <button class="btn" id="bi">Ingresar</button></div>`);
+    <button class="btn" id="bi">Ingresar</button></div>`, 'login');
   $('#bi').onclick = async () => {
     const id = $('#op').value, pin = $('#pin').value.trim();
     if(!id || !pin) return alert('Seleccione su nombre e ingrese su PIN.');
-    $('#bi').disabled = true;
+    $('#bi').disabled = true; $('#bi').textContent = 'Verificando…';
     try{
       const r = await api({accion:'login', op:id, pin});
       S.op = {id, pin, nombre:r.nombre, turnoKey:S.turnoKey};
       ls('lim_op', S.op);
-      decidir();
-    }catch(e){ alert(e.message); $('#bi').disabled = false; }
+      S.vista = 'estado'; actualizar();
+    }catch(e){ alert(e.message); $('#bi').disabled = false; $('#bi').textContent = 'Ingresar'; }
   };
 }
 function salir(){ ls('lim_op', null); S.op = null; login(); }
 
-/* ====== FLUJO PRINCIPAL ====== */
+/* ====== FLUJO ====== */
 function decidir(){
-  const ez = S.ez || {estado:'PENDIENTE'}, reg = ez.reg;
+  const ez = S.ez, reg = ez.reg;
   const pie = rutaHtml() + `<button class="link" onclick="salir()">No soy ${esc(S.op.nombre)} · cambiar operador</button>`;
+  const v = h => pantalla(h, 'estado');
   if(ez.estado === 'APROBADO')
-    return pantalla(`<div class="ver ok"><div class="e">✅ Zona aprobada${S.zona.frecuencia === 'SEMANAL' ? ' esta semana' : ''}</div><p>Limpiada por ${esc(reg.operador)} · ${fh(reg.horaDespues)}</p></div>${pie}`);
+    return v(`<div class="ver ok"><div class="e">✅ Zona aprobada${S.zona.frecuencia === 'SEMANAL' ? ' esta semana' : ''}</div><p>Limpiada por ${esc(reg.operador)} · ${fh(reg.horaDespues)}</p></div>${pie}`);
+  if(ez.estado === 'POR_REVISAR')
+    return v(`<div class="ver info"><div class="e">🕒 Limpieza enviada</div><p>${reg.operadorId === S.op.id ? 'Su limpieza' : 'Limpiada por <b>' + esc(reg.operador) + '</b>'} · ${fh(reg.horaDespues)}<br>Pendiente de evaluación del jefe contra la foto patrón.</p></div>${patronHtml('Estándar de la zona')}${pie}`);
   if(reg && ['EN_PROCESO','ANALIZANDO','OBSERVADO','REHACER','REVISION_JEFE'].includes(ez.estado)){
     if(reg.operadorId !== S.op.id)
-      return pantalla(`<div class="ver info"><div class="e">🧹 En curso</div><p>Esta limpieza la inició <b>${esc(reg.operador)}</b>. Solo esa persona puede cerrarla.</p></div>${pie}`);
+      return v(`<div class="ver info"><div class="e">🧹 En curso</div><p>Esta limpieza la inició <b>${esc(reg.operador)}</b>. Solo esa persona puede cerrarla.</p></div>${pie}`);
     if(ez.estado === 'EN_PROCESO') return pasoDespues(reg, pie);
     if(ez.estado === 'ANALIZANDO' || ez.estado === 'REVISION_JEFE')
-      return pantalla(`<div class="ver info"><div class="e">👁 En revisión</div><p>${ez.estado === 'ANALIZANDO' ? 'La IA está analizando las fotos. Actualice en un momento.' : 'El jefe revisará las fotos de esta limpieza.'}</p></div>
-        <button class="btn sec" onclick="refrescar()">↻ Actualizar</button>${pie}`);
-    return pantalla(resultadoHtml(reg) + `<button class="btn" onclick="tomar('DESPUES')">📷 Corregí · tomar nueva foto DESPUÉS</button>` + pie);
+      return v(`<div class="ver info"><div class="e">👁 En revisión</div><p>${ez.estado === 'ANALIZANDO' ? 'Analizando las fotos. Esta pantalla se actualiza sola.' : 'El jefe revisará las fotos de esta limpieza.'}</p></div>${pie}`);
+    return v(resultadoHtml(reg) + patronHtml('Así debe quedar') + `<button class="btn" onclick="tomar('DESPUES')">📷 Corregí · tomar nueva foto DESPUÉS</button>` + pie);
   }
   pasoAntes(pie);
 }
 
+function patronHtml(titulo){
+  if(!S.zona.refUrl) return '';
+  return `<div class="card"><h3>📌 ${esc(titulo || 'Así debe quedar')}</h3>
+    <img src="${esc(S.zona.refUrl)}" referrerpolicy="no-referrer" alt="Foto patrón" style="width:100%;border-radius:12px;display:block">
+    <p class="muted">Foto patrón de la zona. Su limpieza se califica comparándola con esta foto.</p></div>`;
+}
 function criteriosHtml(){ return `<h3 style="margin-top:14px">La zona debe quedar con:</h3><ul class="lst">${S.zona.criterios.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`; }
 
 function pasoAntes(pie){
@@ -157,18 +173,19 @@ function pasoAntes(pie){
     <div class="paso"><b>3</b>Tome la foto DESPUÉS desde el mismo punto</div>
     ${S.zona.instruccion ? `<p class="muted">📍 ${esc(S.zona.instruccion)}</p>` : ''}
     ${criteriosHtml()}
-    ${bloq ? `<div class="ver warn" style="margin:14px 0 0"><b>Fuera de horario</b><p>La ruta de este turno se registra de ${esc(S.ventana)}.</p></div>` : ''}
-    <button class="btn" ${bloq ? 'disabled' : ''} onclick="tomar('ANTES')">📷 Tomar foto ANTES</button></div>${pie}`);
+    ${S.zona.refUrl ? `<p class="muted" style="margin-top:12px">📌 Revise abajo la foto patrón: así debe quedar la zona.</p>` : ''}
+    ${bloq ? `<div class="ver warn" style="margin:14px 0 0"><b>Fuera de horario</b><p>La ruta de este turno se registra de ${esc(S.ventanaTxt)}.</p></div>` : ''}
+    <button class="btn" ${bloq ? 'disabled' : ''} onclick="tomar('ANTES')">📷 Tomar foto ANTES</button></div>${patronHtml()}${pie}`, 'estado');
 }
 
 function pasoDespues(reg, pie){
   const listo = reg.horaAntes + S.zona.tiempoMin * 60000;
-  pantalla(`<div class="ver info"><div class="e">🧹 Limpie la zona</div><p>Foto ANTES registrada a las ${fh(reg.horaAntes)}</p></div>
+  pantalla(`<div class="ver info"><div class="e">🧹 Limpie la zona</div><p>Foto ANTES registrada a las ${fh(reg.horaAntes, false, true)}</p></div>
     <div class="card"><p class="center muted" id="lbl">Podrá tomar la foto DESPUÉS en:</p><div class="big" id="cd">--:--</div>
     ${criteriosHtml()}
-    <button class="btn" id="bd" disabled onclick="tomar('DESPUES')">📷 Tomar foto DESPUÉS</button></div>${pie}`);
+    <button class="btn" id="bd" disabled onclick="tomar('DESPUES')">📷 Tomar foto DESPUÉS</button></div>${patronHtml()}${pie}`, 'estado');
   const tick = () => {
-    const f = listo - ahoraSrv().getTime();
+    const f = listo - ahora();
     if(f <= 0){ $('#cd').textContent = '✓'; $('#lbl').textContent = 'Ya puede tomar la foto DESPUÉS'; $('#bd').disabled = false; clearInterval(timer); return; }
     $('#cd').textContent = Math.floor(f / 60000) + ':' + String(Math.floor(f % 60000 / 1000)).padStart(2, '0');
   };
@@ -177,7 +194,7 @@ function pasoDespues(reg, pie){
 
 function rutaHtml(){
   const r = S.ruta; if(!r) return '';
-  return `<div class="card ruta"><h3>${esc(r.titulo || 'Ruta del turno')}: ${r.aprobadas}/${r.total} aprobadas</h3><ul>
+  return `<div class="card ruta"><h3>${esc(r.titulo)}: ${r.aprobadas}/${r.total} aprobadas</h3><ul>
     ${r.zonas.map(z => { const [t, c] = est(z.estado); return `<li><span>${esc(z.nombre)}</span><span class="chip ${c}">${t}</span></li>`; }).join('')}
     </ul>${r.total && r.aprobadas === r.total ? '<p class="center" style="color:var(--v);font-weight:800;margin-top:10px">🎉 Ruta completa</p>' : ''}</div>`;
 }
@@ -185,40 +202,58 @@ function rutaHtml(){
 function resultadoHtml(x){
   const [t, c] = est(x.estado);
   const col = d => d >= 4 ? 'var(--v)' : d <= 2 ? 'var(--r)' : 'var(--a)';
-  const crit = (x.criterios || []).map(k => `<tr><td>${esc(k.criterio)}</td><td class="n">${esc(k.antes)}</td><td class="n" style="color:${col(k.despues)}">${esc(k.despues)}</td></tr>`).join('');
+  const conAntes = (x.criterios || []).some(k => k.antes != null && k.antes !== '');
+  const crit = (x.criterios || []).map(k => `<tr><td>${esc(k.criterio)}</td>${conAntes ? `<td class="n">${esc(k.antes)}</td>` : ''}<td class="n" style="color:${col(k.despues)}">${esc(k.despues)}</td></tr>`).join('');
   return `<div class="ver ${c}"><div class="e">${t}</div><p>${esc(x.motivo || '')}</p>
-      ${x.sd !== '' && x.sd != null ? `<p style="font-size:18px"><b>${esc(x.sa)} → ${esc(x.sd)}</b> de 5</p>` : ''}</div>
+      ${x.pct != null ? `<p style="font-size:18px"><b>Calificación: ${esc(x.pct)} %</b> del estándar</p>` : x.sd !== '' && x.sd != null && x.sa !== '' && x.sa != null ? `<p style="font-size:18px"><b>${esc(x.sa)} → ${esc(x.sd)}</b> de 5</p>` : ''}</div>
     ${(x.hallazgos || []).length ? `<div class="card"><h3>Lo que falta corregir</h3><ul class="lst">${x.hallazgos.map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>` : ''}
-    ${crit ? `<div class="card"><h3>Calificación por criterio</h3><table><tr><th>Criterio</th><th class="n">Antes</th><th class="n">Después</th></tr>${crit}</table></div>` : ''}`;
+    ${crit ? `<div class="card"><h3>Calificación por criterio</h3><table><tr><th>Criterio</th>${conAntes ? '<th class="n">Antes</th>' : ''}<th class="n">${conAntes ? 'Después' : 'Puntaje (1–5)'}</th></tr>${crit}</table></div>` : ''}`;
+}
+
+// Mientras llega la siguiente consulta, usar el registro devuelto por el servidor
+function aplicarReg(reg){
+  if(!reg) return;
+  S.regs = S.regs.filter(r => r.id !== reg.id).concat([reg]);
 }
 
 /* ====== FOTOS ====== */
 async function tomar(tipo){
   const foto = await abrirCamara(tipo);
-  if(!foto) return decidir();
+  if(!foto){ S.vista = 'estado'; return actualizar(); }
   pantalla(`<div class="card prev"><h3>Foto ${tipo === 'ANTES' ? 'ANTES' : 'DESPUÉS'}</h3><img src="${foto.b64}" alt="">
-    <button class="btn" id="be">✔ Enviar foto</button><button class="btn sec" id="br">↺ Repetir</button></div>`);
+    <button class="btn" id="be">✔ Enviar foto</button><button class="btn sec" id="br">↺ Repetir</button></div>`, 'otro');
   $('#br').onclick = () => tomar(tipo);
   $('#be').onclick = async () => {
-    if(ahoraSrv().getTime() - foto.hora > (S.vigencia || 5) * 60000) return error('La foto venció. Tómela de nuevo en el momento.');
-    cargando(tipo === 'ANTES' ? 'Registrando foto ANTES…' : 'Analizando la limpieza con IA… (puede tardar unos 20 segundos)');
+    if(ahora() - foto.hora > (S.M.config.minFotoVigencia || 5) * 60000) return error('La foto venció. Tómela de nuevo en el momento.');
+    cargando(tipo === 'ANTES' ? 'Registrando foto ANTES…' : (S.M.config.usarIA ? 'Analizando la limpieza… (puede tardar unos 20 segundos)' : 'Enviando foto DESPUÉS…'));
     try{
       const base = Object.assign({op:S.op.id, pin:S.op.pin, foto:foto.b64}, await ubicacion());
-      if(tipo === 'ANTES'){ await api(Object.assign(base, {accion:'antes', z:S.z, t:S.t})); return refrescar(); }
+      if(tipo === 'ANTES'){
+        const r = await api(Object.assign(base, {accion:'antes', z:S.z, t:S.t}));
+        aplicarReg(r.reg); S.vista = 'estado'; S.sub.ahora(); return actualizar();
+      }
       const r = await api(Object.assign(base, {accion:'despues', id:S.ez.reg.id}));
-      pantalla(resultadoHtml(r) + `<button class="btn" onclick="refrescar()">Continuar</button>`);
-    }catch(e){ error(e.message); }
+      aplicarReg(r.reg); S.sub.ahora();
+      pantalla((r.estado === 'POR_REVISAR'
+        ? `<div class="ver ok"><div class="e">✅ Limpieza enviada</div><p>El jefe la evaluará comparándola con la foto patrón.</p></div>${patronHtml('Estándar de la zona')}`
+        : resultadoHtml(r)) + `<button class="btn" id="bc">Continuar</button>`, 'otro');
+      $('#bc').onclick = () => { S.vista = 'estado'; actualizar(); };
+    }catch(e){
+      if(/PIN incorrecto|Operador no válido/.test(e.message)){ ls('lim_op', null); S.op = null; }
+      error(e.message);
+    }
   };
 }
 
 async function abrirCamara(tipo){
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ error('Este navegador no permite usar la cámara. Abra el enlace en Google Chrome.'); return null; }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ error('Este navegador no permite usar la cámara. Abra el enlace en Google Chrome o Safari.'); return null; }
   const ov = document.createElement('div'); ov.id = 'cam';
   ov.innerHTML = `<div class="vw"><video id="vid" autoplay playsinline muted></video>
       ${S.zona.refUrl ? `<img id="ghost" src="${esc(S.zona.refUrl)}" referrerpolicy="no-referrer" alt="">` : ''}
       <div class="camtop">FOTO ${tipo === 'ANTES' ? 'ANTES' : 'DESPUÉS'} · ${esc(S.zona.nombre)}<small>${esc(S.zona.instruccion || 'Encuadre la zona completa')}${S.zona.refUrl ? ' · Haga coincidir con la guía' : ''}</small></div></div>
     <div class="cambar"><button class="cb" id="cx">Cancelar</button><button class="shot" id="cs" aria-label="Tomar foto"></button><button class="cb" id="cg">${S.zona.refUrl ? 'Guía' : ''}</button></div>`;
   document.body.appendChild(ov);
+  S.vista = 'otro';
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}}, audio:false});
     $('#vid').srcObject = stream;
@@ -238,22 +273,22 @@ function capturar(v, tipo){
   const W = Math.min(1280, v.videoWidth), Hh = Math.round(v.videoHeight * W / v.videoWidth);
   const c = document.createElement('canvas'); c.width = W; c.height = Hh;
   const x = c.getContext('2d'); x.drawImage(v, 0, 0, W, Hh);
-  const hora = ahoraSrv(), fs = Math.max(16, Math.round(W / 42)), band = Math.round(fs * 3.4);
+  const hora = ahora(), fs = Math.max(16, Math.round(W / 42)), band = Math.round(fs * 3.4);
   x.fillStyle = 'rgba(0,0,0,.62)'; x.fillRect(0, Hh - band, W, band);
   x.fillStyle = '#fff'; x.font = `700 ${fs}px sans-serif`;
   x.fillText(`${tipo === 'ANTES' ? 'ANTES' : 'DESPUÉS'} · ${S.zona.nombre}`, fs * .6, Hh - band + fs * 1.3);
   x.font = `${Math.round(fs * .85)}px sans-serif`;
-  x.fillText(`${fh(hora.getTime(), true)} · ${S.op.nombre}`, fs * .6, Hh - band + fs * 2.75);
-  return {b64: c.toDataURL('image/jpeg', 0.75), hora: hora.getTime()};
+  x.fillText(`${fh(hora, true, true)} · ${S.op.nombre}`, fs * .6, Hh - band + fs * 2.75);
+  return {b64: c.toDataURL('image/jpeg', 0.75), hora};
 }
 
 function ubicacion(){
-  if(!S.geo || !navigator.geolocation) return Promise.resolve({});
+  if(!S.M.config.geocerca || !navigator.geolocation) return Promise.resolve({});
   return new Promise(res => navigator.geolocation.getCurrentPosition(
     p => res({lat:p.coords.latitude, lng:p.coords.longitude}), () => res({}), {enableHighAccuracy:true, timeout:10000}));
 }
 
-refrescar();
+arrancar();
 </script>
 </body>
 </html>
