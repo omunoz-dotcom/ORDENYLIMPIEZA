@@ -47,7 +47,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;b
 
 <script>
 /* ====== CONFIGURACIÓN ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwLvTzQNR-mZcWK4SXRv0iBUqidTbHhnZSSsC8iAAhdxlXr8R4XYP2zNU6BvUSDwb5U/exec';   // termina en /exec
+const API_URL = 'https://script.google.com/macros/s/AKfycbwIjEMw2BewBu-_MJwpX7IQNTv364EasGF84sy741ez7Jg75QoJ3-Uicbxu0VSGLNAg/exec';   // termina en /exec
 
 /* ====== ESTADO Y UTILIDADES ====== */
 const S = {};
@@ -95,7 +95,9 @@ async function refrescar(){
       ventana:r.ventana, enVentana:r.enVentana, bloqueo:r.bloqueaFueraVentana, vigencia:r.minFotoVigencia});
     S.turnoKey = r.turno.fecha + '_' + r.turno.turno;
     $('#hz').textContent = r.zona.nombre;
-    $('#hs').textContent = 'Turno ' + (r.turno.turno === 'DIA' ? 'Día' : 'Noche') + ' · Ruta de ' + r.ventana;
+    $('#hs').textContent = r.zona.frecuencia === 'SEMANAL'
+      ? 'Limpieza semanal · 1 vez por semana (lunes a domingo)'
+      : 'Turno ' + (r.turno.turno === 'DIA' ? 'Día' : 'Noche') + ' · Ruta de ' + r.ventana;
     const g = ls('lim_op');
     if(g && g.turnoKey === S.turnoKey){ S.op = g; return decidir(); }
     login();
@@ -132,7 +134,7 @@ function decidir(){
   const ez = S.ez || {estado:'PENDIENTE'}, reg = ez.reg;
   const pie = rutaHtml() + `<button class="link" onclick="salir()">No soy ${esc(S.op.nombre)} · cambiar operador</button>`;
   if(ez.estado === 'APROBADO')
-    return pantalla(`<div class="ver ok"><div class="e">✅ Zona aprobada</div><p>Limpiada por ${esc(reg.operador)} · ${fh(reg.horaDespues)}</p></div>${pie}`);
+    return pantalla(`<div class="ver ok"><div class="e">✅ Zona aprobada${S.zona.frecuencia === 'SEMANAL' ? ' esta semana' : ''}</div><p>Limpiada por ${esc(reg.operador)} · ${fh(reg.horaDespues)}</p></div>${pie}`);
   if(reg && ['EN_PROCESO','ANALIZANDO','OBSERVADO','REHACER','REVISION_JEFE'].includes(ez.estado)){
     if(reg.operadorId !== S.op.id)
       return pantalla(`<div class="ver info"><div class="e">🧹 En curso</div><p>Esta limpieza la inició <b>${esc(reg.operador)}</b>. Solo esa persona puede cerrarla.</p></div>${pie}`);
@@ -175,7 +177,7 @@ function pasoDespues(reg, pie){
 
 function rutaHtml(){
   const r = S.ruta; if(!r) return '';
-  return `<div class="card ruta"><h3>Ruta del turno: ${r.aprobadas}/${r.total} zonas aprobadas</h3><ul>
+  return `<div class="card ruta"><h3>${esc(r.titulo || 'Ruta del turno')}: ${r.aprobadas}/${r.total} aprobadas</h3><ul>
     ${r.zonas.map(z => { const [t, c] = est(z.estado); return `<li><span>${esc(z.nombre)}</span><span class="chip ${c}">${t}</span></li>`; }).join('')}
     </ul>${r.total && r.aprobadas === r.total ? '<p class="center" style="color:var(--v);font-weight:800;margin-top:10px">🎉 Ruta completa</p>' : ''}</div>`;
 }
