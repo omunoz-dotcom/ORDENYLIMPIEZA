@@ -60,7 +60,7 @@ input{width:100%;font-size:18px;padding:12px;border:1px solid #c9d3ce;border-rad
 
 <script>
 /* ====== CONFIGURACIÓN ====== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwLvTzQNR-mZcWK4SXRv0iBUqidTbHhnZSSsC8iAAhdxlXr8R4XYP2zNU6BvUSDwb5U/exec';   // termina en /exec
+const API_URL = 'https://script.google.com/macros/s/AKfycbwIjEMw2BewBu-_MJwpX7IQNTv364EasGF84sy741ez7Jg75QoJ3-Uicbxu0VSGLNAg/exec';   // termina en /exec
 
 let D = null, clave = null, tab = 'turno', off = 0;
 const $ = s => document.querySelector(s);
@@ -125,10 +125,20 @@ function vTurno(){
         <p class="muted">Programados: ${esc(t.programados.join(', ') || 'sin programación')}</p></div></div>
     ${D.fase.listo ? `<div class="card ok"><b>✅ Listo para la Fase ${D.fase.actual + 1}.</b> Promedio ${D.fase.promedio}% en los últimos ${D.fase.evaluados} turnos. ${D.fase.siguientes.length ? 'Active en ZONAS: ' + esc(D.fase.siguientes.join(', ')) : ''}</div>` : ''}
     <div class="grid">${t.zonas.map(zonaCard).join('')}</div>
+    ${vSemanales()}
     <div class="card" style="margin-top:12px"><div class="row"><h3>Turno anterior · ${turnoTxt(a.turno)} ${esc(a.fecha)}</h3>
       <span class="chip" style="background:${bgPct(a.pct)};color:${colPct(a.pct)}">${a.pct}%</span></div>
       <p class="muted">${esc(a.programados.join(', ') || '—')}</p>
       <div class="acc">${a.zonas.map(z => { const [tx, c] = est(z.estado); return `<span class="chip ${c}">${esc(z.nombre)}: ${tx}</span>`; }).join('')}</div></div>`;
+}
+
+function vSemanales(){
+  const s = D.semanales;
+  if(!s || !s.total) return '';
+  return `<div class="card" style="margin-top:12px"><div class="row"><h3>🗓 Zonas semanales · ${esc(s.semanaTxt)}</h3>
+      <span class="chip" style="background:${bgPct(s.pct)};color:${colPct(s.pct)}">${s.aprobadas}/${s.total}</span></div>
+      <p class="muted">Una limpieza aprobada de lunes a domingo. Si falta alguna, se alerta por correo el lunes.</p></div>
+    <div class="grid">${s.zonas.map(zonaCard).join('')}</div>`;
 }
 
 function zonaCard(z){
@@ -205,7 +215,7 @@ function vZonas(){
       ${D.urlApp ? '' : '<p class="alerta">Configure URL_APP en la hoja CONFIG para generar los QR.</p>'}
       <p class="muted">Para incorporar una zona: hoja ZONAS → ponga el nombre, criterios separados por | y ACTIVA = SI. Luego imprima su QR. Si un QR se filtra, cambie el TOKEN de la zona y reimprímalo.</p></div>
     <div class="grid">${D.zonas.map(z => `<div class="card"><div class="row"><h3>${esc(z.id)} · ${esc(z.nombre)}</h3>
-        <span class="chip ${z.activa ? 'ok' : 'gray'}">${z.activa ? 'Activa' : 'Fase ' + esc(z.fase)}</span></div>
+        <span class="chip ${z.activa ? 'ok' : 'gray'}">${z.activa ? (z.frecuencia === 'SEMANAL' ? 'Activa · Semanal' : 'Activa · Por turno') : 'Fase ' + esc(z.fase)}</span></div>
         <p class="muted">${esc(z.instruccion || '')} · mínimo ${esc(z.tiempoMin)} min</p>
         <ul style="margin:6px 0;padding-left:18px;font-size:13px">${z.criterios.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
         ${z.refUrl ? `<img src="${esc(z.refUrl)}" referrerpolicy="no-referrer" style="width:100%;border-radius:10px" alt="">` : '<p class="muted">📌 Sin foto patrón: elija una limpieza aprobada y márquela como patrón.</p>'}
@@ -219,7 +229,7 @@ function imprimirQR(){
   p.innerHTML = zs.map((z, i) => `<div class="qrc"><div class="t">CONTROL DE LIMPIEZA · BODEGA DE SILOS</div>
       <div class="zn">${esc(z.nombre)}</div><div class="q" id="q${i}"></div>
       <ol><li>Escanee este código con la cámara del celular.</li><li>Tome la foto <b>ANTES</b>.</li><li>Limpie la zona completa.</li><li>Tome la foto <b>DESPUÉS</b> desde el mismo punto.</li></ol>
-      <p style="font-size:11px;color:#666;margin-top:8px">${esc(z.id)} · Responsable: operador de turno</p></div>`).join('');
+      <p style="font-size:11px;color:#666;margin-top:8px">${esc(z.id)} · ${z.frecuencia === 'SEMANAL' ? 'Limpieza semanal' : 'Limpieza por turno'} · Responsable: operador</p></div>`).join('');
   zs.forEach((z, i) => new QRCode(document.getElementById('q' + i), {text:z.qr, width:230, height:230, correctLevel:QRCode.CorrectLevel.M}));
   setTimeout(() => window.print(), 700);
 }
