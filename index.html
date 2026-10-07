@@ -30,12 +30,21 @@ select,input{width:100%;font-size:19px;padding:13px;border:1px solid #c9d3ce;bor
 .spin{display:inline-block;width:18px;height:18px;border:3px solid #ffffff66;border-top-color:#fff;border-radius:50%;animation:g 1s linear infinite}
 @keyframes g{to{transform:rotate(360deg)}}
 input[type=file]{display:none}
+.fila{display:flex;gap:8px;align-items:stretch}.fila select{flex:1}
+.qrbtn{flex:none;border:2px solid var(--v);background:#fff;color:var(--v);border-radius:10px;font-weight:800;font-size:15px;padding:0 14px}
+#lector{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
+#lector.on{display:flex}
+#lector video{flex:1;min-height:0;width:100%;object-fit:cover}
+#lector .marco{position:absolute;left:50%;top:42%;width:64vw;max-width:300px;aspect-ratio:1;transform:translate(-50%,-50%);border:4px solid #ffd400;border-radius:18px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)}
+#lector .txt{position:absolute;left:0;right:0;top:16px;text-align:center;color:#fff;font-weight:700;padding:0 16px}
+#lector button{margin:16px;min-height:56px;border-radius:12px;border:0;font-size:18px;font-weight:800}
 </style>
 </head>
 <body>
-<header><b id="titulo">🧹 Control de Limpieza</b><small id="sub">Foto antes y después</small></header>
+<header><b id="titulo">Control de Limpieza</b><small id="sub">Foto antes y después</small></header>
 <main id="app"></main>
 <input type="file" id="cam" accept="image/*" capture="environment">
+<div id="lector"><video id="vq" playsinline muted></video><div class="marco"></div><div class="txt">Apunte al código QR de la zona</div><button id="qrCerrar">Cancelar</button></div>
 
 <script>
 /* ====== ÚNICA CONFIGURACIÓN: pegue aquí la URL /exec de su Apps Script ====== */
@@ -69,29 +78,33 @@ fetch(API_URL).then(r => r.json()).then(j => { if(j.ok){ L = {zonas: j.zonas, op
 
 /* ====== PANTALLAS ====== */
 function pintar(){
-  $('#sub').textContent = U ? '👤 ' + U.nombre : 'Foto antes y después';
+  $('#sub').textContent = U ? 'Operador: ' + U.nombre : 'Foto antes y después';
   if(!U) return pintarLogin();
   if(fin) return pintarFin();
   const opZ = L.zonas.map(z => `<option ${z === zona ? 'selected' : ''}>${esc(z)}</option>`).join('');
   $('#app').innerHTML = `
     <div class="card">
-      ${zonaQR ? `<label>Zona</label><div style="font-size:22px;font-weight:800">📍 ${esc(zonaQR)}</div>`
-        : `<label>Zona</label><select id="zona" ${P ? 'disabled' : ''}><option value="">— Elija la zona —</option>${opZ}${zona && !L.zonas.includes(zona) ? `<option selected>${esc(zona)}</option>` : ''}</select>`}
+      <label>Zona</label>
+      ${P ? `<div style="font-size:22px;font-weight:800">${esc(P.zona)}</div>`
+        : `<div class="fila"><select id="zona"><option value="">— Elija la zona —</option>${opZ}${zona && !L.zonas.includes(zona) ? `<option selected>${esc(zona)}</option>` : ''}</select>
+           <button class="qrbtn" id="bQR">Escanear QR</button></div>
+           <p class="muted" style="margin:8px 0 0">Escanee el código QR de la zona o elíjala de la lista.</p>`}
     </div>
     <div class="card">
-      <div class="paso ${P ? 'ok' : ''}"><i>${P ? '✓' : '1'}</i> Foto ANTES</div>
-      ${P ? `<img class="foto" src="${P.mini}" alt=""><div class="estado ok-txt">✓ Enviada a las ${esc(P.hora)}</div>`
-          : `<button class="btn" id="bAntes">📷 Tomar foto ANTES</button>`}
+      <div class="paso ${P ? 'ok' : ''}"><i>1</i> Foto ANTES</div>
+      ${P ? `<img class="foto" src="${P.mini}" alt=""><div class="estado ok-txt">Enviada a las ${esc(P.hora)}</div>`
+          : `<button class="btn" id="bAntes">Tomar foto ANTES</button>`}
     </div>
     <div class="card">
       <div class="paso"><i>2</i> Foto DESPUÉS</div>
       <p class="muted">${P ? 'Cuando termine de limpiar, tome la foto desde el mismo lugar.' : 'Primero tome la foto ANTES.'}</p>
-      <button class="btn" id="bDespues" ${P ? '' : 'disabled'}>📷 Tomar foto DESPUÉS</button>
+      <button class="btn" id="bDespues" ${P ? '' : 'disabled'}>Tomar foto DESPUÉS</button>
     </div>
     ${P ? `<button class="link" id="bCancelar">Cancelar esta limpieza</button><br>` : ''}
     <button class="link" id="bSalir">Cambiar usuario</button>`;
   const sz = $('#zona'); if(sz) sz.onchange = () => { zona = sz.value; ls('ultimaZona', zona); };
-  if($('#bAntes')) $('#bAntes').onclick = () => { if(!zona) return alert('Elija la zona primero.'); tomar('antes'); };
+  if($('#bQR')) $('#bQR').onclick = escanear;
+  if($('#bAntes')) $('#bAntes').onclick = () => { if(!zona) return alert('Seleccione la zona primero.'); tomar('antes'); };
   $('#bDespues').onclick = () => tomar('despues');
   if($('#bCancelar')) $('#bCancelar').onclick = () => { if(confirm('¿Cancelar esta limpieza? Deberá tomar de nuevo la foto ANTES.')){ P = null; ls('pendiente', null); pintar(); } };
   $('#bSalir').onclick = () => { if(P && !confirm('Hay una limpieza sin terminar. ¿Cambiar de usuario igual?')) return; U = null; ls('usuario', null); pintar(); };
@@ -115,11 +128,50 @@ function pintarLogin(msg){
 }
 
 function pintarFin(){
-  $('#app').innerHTML = `<div class="card fin"><div style="font-size:48px">✅</div><h2>Limpieza registrada</h2>
+  $('#app').innerHTML = `<div class="card fin"><h2>Limpieza registrada</h2>
       <p>${esc(fin.zona)}<br>Antes ${esc(fin.antes)} · Después ${esc(fin.despues)}${fin.minutos !== '' ? ' · ' + fin.minutos + ' min' : ''}</p></div>
     <button class="btn" id="bNueva">Registrar otra zona</button>`;
-  $('#bNueva').onclick = () => { fin = null; if(!zonaQR) zona = ''; pintar(); };
+  $('#bNueva').onclick = () => { fin = null; zona = ''; pintar(); };
 }
+
+/* ====== LECTOR DE QR (dentro de la app) ====== */
+let qrStream = null, qrActivo = false;
+async function escanear(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert('Este celular no permite escanear aquí. Use la cámara del celular o elija la zona de la lista.');
+  let detectar;
+  if('BarcodeDetector' in window){
+    const bd = new BarcodeDetector({formats:['qr_code']});
+    detectar = async v => { const r = await bd.detect(v); return r[0] && r[0].rawValue; };
+  }else{
+    if(!window.jsQR) await new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; sc.onload = ok; sc.onerror = mal; document.head.appendChild(sc); })
+      .catch(() => null);
+    if(!window.jsQR) return alert('No se pudo cargar el lector. Use la cámara del celular o elija la zona de la lista.');
+    const c = document.createElement('canvas'), x = c.getContext('2d', {willReadFrequently:true});
+    detectar = async v => { c.width = v.videoWidth; c.height = v.videoHeight; x.drawImage(v, 0, 0); const r = jsQR(x.getImageData(0, 0, c.width, c.height).data, c.width, c.height); return r && r.data; };
+  }
+  try{ qrStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}, audio:false}); }
+  catch(e){ return alert('Permita el acceso a la cámara para escanear.'); }
+  const v = $('#vq'); v.srcObject = qrStream; await v.play();
+  $('#lector').classList.add('on'); qrActivo = true;
+  $('#qrCerrar').onclick = cerrarLector;
+  const ciclo = async () => {
+    if(!qrActivo) return;
+    let txt = null;
+    if(v.readyState >= 2) try{ txt = await detectar(v); }catch(e){}
+    if(txt){
+      let z = txt.trim();
+      try{ const u = new URL(z); z = u.searchParams.get('z') || z; }catch(e){}
+      const ok = L.zonas.find(n => n.toLowerCase() === z.toLowerCase());
+      cerrarLector();
+      if(!ok && L.zonas.length) return alert('Ese QR no corresponde a una zona registrada: ' + z);
+      zona = ok || z; ls('ultimaZona', zona); if(navigator.vibrate) navigator.vibrate(120); pintar();
+      return;
+    }
+    setTimeout(ciclo, 250);
+  };
+  ciclo();
+}
+function cerrarLector(){ qrActivo = false; if(qrStream){ qrStream.getTracks().forEach(t => t.stop()); qrStream = null; } $('#lector').classList.remove('on'); }
 
 /* ====== FOTOS ====== */
 function tomar(tipo){
@@ -130,7 +182,7 @@ function tomar(tipo){
     const b = $(tipo === 'antes' ? '#bAntes' : '#bDespues');
     b.disabled = true; b.innerHTML = '<span class="spin"></span> Enviando foto…';
     try{
-      const z = tipo === 'antes' ? (zonaQR || zona) : P.zona;
+      const z = tipo === 'antes' ? zona : P.zona;
       const foto = await preparar(file, tipo === 'antes' ? 'ANTES' : 'DESPUÉS', z);
       if(tipo === 'antes'){
         const r = await api({accion:'antes', zona:z, operador:U.nombre, pin:U.pin, foto:foto.grande});
@@ -158,12 +210,28 @@ function preparar(file, tipo, z){
       const W = Math.round(img.width * k), H = Math.round(img.height * k);
       const c = document.createElement('canvas'); c.width = W; c.height = H;
       const x = c.getContext('2d'); x.drawImage(img, 0, 0, W, H);
-      const fs = Math.max(16, Math.round(W / 34)), band = Math.round(fs * 3.3);
-      x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(0, H - band, W, band);
-      x.fillStyle = '#fff'; x.font = `700 ${fs}px sans-serif`;
-      x.fillText(`${tipo} · ${z}`, fs * .6, H - band + fs * 1.3);
-      x.font = `${Math.round(fs * .85)}px sans-serif`;
-      x.fillText(`${new Date().toLocaleDateString('es-EC', {timeZone:'America/Guayaquil'})} ${hora()} · ${U.nombre}`, fs * .6, H - band + fs * 2.7);
+      // Marca de agua: tipo y zona · fecha y hora · turno · operador
+      const ahora = new Date();
+      const hEc = Number(ahora.toLocaleString('en-US', {timeZone:'America/Guayaquil', hour:'numeric', hour12:false})) % 24;
+      const turno = hEc >= 8 && hEc < 20 ? 'TURNO DÍA (08:00-20:00)' : 'TURNO NOCHE (20:00-08:00)';
+      const fecha = ahora.toLocaleDateString('es-EC', {timeZone:'America/Guayaquil', day:'2-digit', month:'2-digit', year:'numeric'});
+      const hms = ahora.toLocaleTimeString('es-EC', {timeZone:'America/Guayaquil', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+      const lineas = [
+        {t: `${tipo} · ${z}`, b: true},
+        {t: `FECHA: ${fecha}   HORA: ${hms}`},
+        {t: `${turno}`},
+        {t: `OPERADOR: ${U.nombre}`}
+      ];
+      const fs = Math.max(18, Math.round(W / 30)), lh = Math.round(fs * 1.35), pad = Math.round(fs * .6);
+      const band = lh * lineas.length + pad * 2;
+      x.fillStyle = 'rgba(0,0,0,.62)'; x.fillRect(0, H - band, W, band);
+      x.fillStyle = '#ffd400'; x.fillRect(0, H - band, Math.round(fs * .35), band);   // franja amarilla de identificación
+      x.textBaseline = 'top';
+      lineas.forEach((l, i) => {
+        x.font = `${l.b ? 800 : 600} ${l.b ? fs : Math.round(fs * .9)}px sans-serif`;
+        x.fillStyle = l.b ? '#ffd400' : '#ffffff';
+        x.fillText(l.t, pad + Math.round(fs * .35), H - band + pad + i * lh);
+      });
       URL.revokeObjectURL(url);
       const grande = c.toDataURL('image/jpeg', 0.72);
       const m = document.createElement('canvas'), km = 480 / W; m.width = 480; m.height = Math.round(H * km);
